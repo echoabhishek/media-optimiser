@@ -1,0 +1,31 @@
+# Builds installers for macOS, Windows and Linux. Each OS builds on its own
+# runner because ffmpeg-static downloads the ffmpeg binary for the host OS.
+name: Build
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+jobs:
+  make:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y rpm fakeroot dpkg
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run make
+      - uses: actions/upload-artifact@v4
+        with:
+          name: media-optimiser-${{ matrix.os }}
+          path: out/make/**

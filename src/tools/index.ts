@@ -1,0 +1,21 @@
+import type { ToolManifest } from '../shared/types';
+import type { ToolDefinition } from './types';
+import { movToMp4 } from './video/mov-to-mp4';
+
+/**
+ * The tool registry. To add a tool:
+ *   1. create `tools/<kind>/<name>.ts` exporting a ToolDefinition
+ *   2. add it to this list
+ * The sidebar, options form, file picker filters and job runner all
+ * pick it up automatically.
+ */
+export const tools: ToolDefinition[] = [movToMp4];
+
+export function getTool(id: string): ToolDefinition | undefined {
+  return tools.find((t) => t.id === id);
+}
+
+/** Strips `run` so the manifest can cross IPC. */
+export function toManifest({ run: _run, ...manifest }: ToolDefinition): ToolManifest {
+  return manifest;
+}
