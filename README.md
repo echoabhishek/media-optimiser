@@ -71,6 +71,8 @@ tool and sends back `JobState` updates.
    - `operation`: `convert` | `optimise` | `transform`
    - `inputExtensions`, `outputExtension`
    - `options`: `select` / `number` / `toggle` fields. The UI form is generated from these.
+     Mark rarely-needed fields `advanced: true`: they go under "Advanced settings" in the app and "Advanced options" in CLI help.
+     Keep the basic set to the one or two choices a non-technical user would make.
    - `run({ inputPath, outputPath, options, engines, signal, onProgress })`
 2. Add it to the array in `src/tools/index.ts`.
 

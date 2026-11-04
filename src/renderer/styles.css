@@ -273,6 +273,28 @@ select {
   height: 18px;
 }
 
+.advanced {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.advanced summary {
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  user-select: none;
+}
+
+.advanced summary:hover {
+  color: var(--text);
+}
+
+.advanced[open] summary {
+  margin-bottom: 14px;
+}
+
 .output-row {
   display: flex;
   align-items: center;

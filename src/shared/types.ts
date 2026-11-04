@@ -19,6 +19,8 @@ interface BaseField {
   key: string;
   label: string;
   help?: string;
+  /** Hidden under "Advanced settings" so the default view stays simple. */
+  advanced?: boolean;
 }
 
 export interface SelectField extends BaseField {

@@ -62,6 +62,12 @@ export function App() {
 
   const isDefault =
     outputDir === null && tool.options.every((f) => options[f.key] === f.default);
+  const basicFields = tool.options.filter((f) => !f.advanced);
+  const advancedFields = tool.options.filter((f) => f.advanced);
+  const advancedChanged = advancedFields.filter((f) => options[f.key] !== f.default).length;
+
+  const setOption = (key: string, value: OptionValues[string]) =>
+    setOptionsByTool((prev) => ({ ...prev, [tool.id]: { ...prev[tool.id], [key]: value } }));
 
   const addFiles = (paths: string[]) => {
     const ok = paths.filter((p) => tool.inputExtensions.includes(extension(p)));
@@ -131,16 +137,16 @@ export function App() {
               Restore defaults
             </button>
           </div>
-          <OptionsForm
-            fields={tool.options}
-            values={options}
-            onChange={(key, value) =>
-              setOptionsByTool((prev) => ({
-                ...prev,
-                [tool.id]: { ...prev[tool.id], [key]: value },
-              }))
-            }
-          />
+          <OptionsForm fields={basicFields} values={options} onChange={setOption} />
+          {advancedFields.length > 0 && (
+            <details className="advanced">
+              <summary>
+                Advanced settings
+                {advancedChanged > 0 && <span className="changed"> · {advancedChanged} changed</span>}
+              </summary>
+              <OptionsForm fields={advancedFields} values={options} onChange={setOption} />
+            </details>
+          )}
           <div className="output-row">
             <span className="option-label">Save to</span>
             <span className="output-path" title={outputDir ?? undefined}>

@@ -24,24 +24,6 @@ export const movToMp4: ToolDefinition = {
   options: [
     {
       type: 'select',
-      key: 'codec',
-      label: 'Codec',
-      default: 'h264',
-      choices: [
-        {
-          value: 'h264',
-          label: 'H.264',
-          help: 'Plays everywhere: Slack, GitHub, every browser, old devices.',
-        },
-        {
-          value: 'h265',
-          label: 'H.265 / HEVC',
-          help: 'Often smaller for long or busy videos. Plays on Apple devices, Windows 10+ and modern browsers.',
-        },
-      ],
-    },
-    {
-      type: 'select',
       key: 'quality',
       label: 'Quality',
       default: 'balanced',
@@ -49,16 +31,6 @@ export const movToMp4: ToolDefinition = {
         { value: 'high', label: 'High', help: 'Visually lossless. Larger file.' },
         { value: 'balanced', label: 'Balanced', help: 'Looks the same as the original in normal viewing.' },
         { value: 'small', label: 'Smallest', help: 'Noticeably softer, best for sharing quickly.' },
-      ],
-    },
-    {
-      type: 'select',
-      key: 'content',
-      label: 'Content',
-      default: 'screen',
-      choices: [
-        { value: 'screen', label: 'Screen recording', help: 'Tuned for sharp text and mostly-still frames.' },
-        { value: 'camera', label: 'Camera footage', help: 'Tuned for natural motion and grain.' },
       ],
     },
     {
@@ -76,7 +48,38 @@ export const movToMp4: ToolDefinition = {
     },
     {
       type: 'select',
+      key: 'codec',
+      advanced: true,
+      label: 'Codec',
+      default: 'h264',
+      choices: [
+        {
+          value: 'h264',
+          label: 'H.264',
+          help: 'Plays everywhere: Slack, GitHub, every browser, old devices.',
+        },
+        {
+          value: 'h265',
+          label: 'H.265 / HEVC',
+          help: 'Often smaller for long or busy videos. Plays on Apple devices, Windows 10+ and modern browsers.',
+        },
+      ],
+    },
+    {
+      type: 'select',
+      key: 'content',
+      advanced: true,
+      label: 'Content',
+      default: 'screen',
+      choices: [
+        { value: 'screen', label: 'Screen recording', help: 'Tuned for sharp text and mostly-still frames.' },
+        { value: 'camera', label: 'Camera footage', help: 'Tuned for natural motion and grain.' },
+      ],
+    },
+    {
+      type: 'select',
       key: 'speed',
+      advanced: true,
       label: 'Encoding speed',
       default: 'slow',
       choices: [
@@ -88,6 +91,7 @@ export const movToMp4: ToolDefinition = {
     {
       type: 'select',
       key: 'audio',
+      advanced: true,
       label: 'Audio',
       default: 'aac160',
       choices: [

@@ -77,17 +77,21 @@ function listText(): string {
 }
 
 function toolHelpText(tool: ToolDefinition): string {
-  const rows: [string, string][] = tool.options.map((f) => [flagSyntax(f), flagHelp(f)]);
+  const toRow = (f: OptionField): [string, string] => [flagSyntax(f), flagHelp(f)];
+  const rows = tool.options.filter((f) => !f.advanced).map(toRow);
   rows.push(['--out <dir>', 'Output folder (default: next to each input file)']);
-  const width = Math.max(...rows.map(([flag]) => flag.length)) + 2;
+  const advanced = tool.options.filter((f) => f.advanced).map(toRow);
+  const width = Math.max(...[...rows, ...advanced].map(([flag]) => flag.length)) + 2;
+  const section = (r: [string, string][]) =>
+    r.map(([flag, help]) => `  ${flag.padEnd(width)}${help}`).join('\n');
   return `${tool.name}: ${tool.description}
 
 Usage: ${BIN} ${cliName(tool)} <files...> [options]
 Accepts: ${tool.inputExtensions.map((e) => `.${e}`).join(' ')}
 
 Options:
-${rows.map(([flag, help]) => `  ${flag.padEnd(width)}${help}`).join('\n')}
-
+${section(rows)}
+${advanced.length ? `\nAdvanced options:\n${section(advanced)}\n` : ''}
 Example:
   ${BIN} ${cliName(tool)} *.${tool.inputExtensions[0]} ${tool.options
     .slice(0, 2)
