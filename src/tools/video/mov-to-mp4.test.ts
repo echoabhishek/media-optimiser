@@ -6,10 +6,20 @@ import type { OptionValues } from '../../shared/types';
 import { movToMp4 } from './mov-to-mp4';
 
 /** Runs the tool against a fake ffmpeg and returns the arguments it built. */
-async function argsFor(options: OptionValues, info: Partial<MediaInfo> = {}): Promise<string[]> {
+async function argsFor(
+  options: OptionValues,
+  info: Partial<MediaInfo> = {},
+): Promise<string[]> {
   let captured: string[] = [];
   const ffmpeg = {
-    probe: async () => ({ durationSec: 10, hasVideo: true, hasAudio: true, width: 3024, height: 1964, ...info }),
+    probe: async () => ({
+      durationSec: 10,
+      hasVideo: true,
+      hasAudio: true,
+      width: 3024,
+      height: 1964,
+      ...info,
+    }),
     run: async (args: string[]) => {
       captured = args;
     },
@@ -55,8 +65,12 @@ describe('mov-to-mp4', () => {
   });
 
   it('downscales only when the video is larger than the limit', async () => {
-    expect(valueOf(await argsFor({ resolution: '1080' }), '-vf')).toBe('scale=-2:1080:flags=lanczos');
-    expect(await argsFor({ resolution: '1080' }, { height: 970 })).not.toContain('-vf');
+    expect(valueOf(await argsFor({ resolution: '1080' }), '-vf')).toBe(
+      'scale=-2:1080:flags=lanczos',
+    );
+    expect(
+      await argsFor({ resolution: '1080' }, { height: 970 }),
+    ).not.toContain('-vf');
     expect(await argsFor({})).not.toContain('-vf');
   });
 
@@ -69,6 +83,8 @@ describe('mov-to-mp4', () => {
   });
 
   it('rejects files without video', async () => {
-    await expect(argsFor({}, { hasVideo: false })).rejects.toThrow('No video stream');
+    await expect(argsFor({}, { hasVideo: false })).rejects.toThrow(
+      'No video stream',
+    );
   });
 });

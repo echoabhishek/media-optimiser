@@ -29,7 +29,9 @@ export function registerIpc(runner: JobRunner, settings: SettingsStore): void {
     return res.canceled ? null : res.filePaths[0];
   });
 
-  ipcMain.handle(IPC.enqueueJobs, (_e, requests: JobRequest[]) => runner.enqueue(requests));
+  ipcMain.handle(IPC.enqueueJobs, (_e, requests: JobRequest[]) =>
+    runner.enqueue(requests),
+  );
   ipcMain.handle(IPC.cancelJob, (_e, id: string) => runner.cancel(id));
   ipcMain.handle(IPC.listJobs, () => runner.list());
   ipcMain.handle(IPC.clearFinished, () => runner.clearFinished());

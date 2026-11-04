@@ -17,7 +17,9 @@ export function App() {
   const [pending, setPending] = useState<string[]>([]);
   const [notice, setNotice] = useState<string | null>(null);
   const [outputDir, setOutputDir] = useState<string | null>(null);
-  const [optionsByTool, setOptionsByTool] = useState<Record<string, OptionValues>>({});
+  const [optionsByTool, setOptionsByTool] = useState<
+    Record<string, OptionValues>
+  >({});
 
   useEffect(() => {
     void Promise.all([api.listTools(), api.getSettings()]).then(([list, s]) => {
@@ -31,15 +33,23 @@ export function App() {
       setOptionsByTool(s.toolOptions);
       setLoaded(true);
     });
-    void api.listJobs().then((list) => setJobs(new Map(list.map((j) => [j.id, j]))));
-    return api.onJobUpdate((job) => setJobs((prev) => new Map(prev).set(job.id, job)));
+    void api
+      .listJobs()
+      .then((list) => setJobs(new Map(list.map((j) => [j.id, j]))));
+    return api.onJobUpdate((job) =>
+      setJobs((prev) => new Map(prev).set(job.id, job)),
+    );
   }, []);
 
   // Persist changes (only after the saved settings have been loaded, so the
   // initial empty state never overwrites them).
   useEffect(() => {
     if (!loaded) return;
-    void api.updateSettings({ selectedToolId: toolId, outputDir, toolOptions: optionsByTool });
+    void api.updateSettings({
+      selectedToolId: toolId,
+      outputDir,
+      toolOptions: optionsByTool,
+    });
   }, [loaded, toolId, outputDir, optionsByTool]);
 
   const tool = tools.find((t) => t.id === toolId);
@@ -60,13 +70,19 @@ export function App() {
   const options = resolveOptions(tool.options, optionsByTool[tool.id]);
 
   const isDefault =
-    outputDir === null && tool.options.every((f) => options[f.key] === f.default);
+    outputDir === null &&
+    tool.options.every((f) => options[f.key] === f.default);
   const basicFields = tool.options.filter((f) => !f.advanced);
   const advancedFields = tool.options.filter((f) => f.advanced);
-  const advancedChanged = advancedFields.filter((f) => options[f.key] !== f.default).length;
+  const advancedChanged = advancedFields.filter(
+    (f) => options[f.key] !== f.default,
+  ).length;
 
   const setOption = (key: string, value: OptionValues[string]) =>
-    setOptionsByTool((prev) => ({ ...prev, [tool.id]: { ...prev[tool.id], [key]: value } }));
+    setOptionsByTool((prev) => ({
+      ...prev,
+      [tool.id]: { ...prev[tool.id], [key]: value },
+    }));
 
   const addFiles = (paths: string[]) => {
     const ok = paths.filter((p) => tool.inputExtensions.includes(extension(p)));
@@ -102,7 +118,9 @@ export function App() {
   const finished = toolJobs.filter((j) => j.status === 'done');
   const totalIn = finished.reduce((s, j) => s + j.inputBytes, 0);
   const totalOut = finished.reduce((s, j) => s + (j.outputBytes ?? 0), 0);
-  const hasFinished = toolJobs.some((j) => !['queued', 'running'].includes(j.status));
+  const hasFinished = toolJobs.some(
+    (j) => !['queued', 'running'].includes(j.status),
+  );
 
   return (
     <div className="app">
@@ -127,7 +145,11 @@ export function App() {
             <button
               className="ghost"
               disabled={isDefault}
-              title={isDefault ? 'Already using the default settings' : 'Undo all changes to these settings'}
+              title={
+                isDefault
+                  ? 'Already using the default settings'
+                  : 'Undo all changes to these settings'
+              }
               onClick={() => {
                 setOptionsByTool(({ [tool.id]: _removed, ...rest }) => rest);
                 setOutputDir(null);
@@ -136,14 +158,24 @@ export function App() {
               Restore defaults
             </button>
           </div>
-          <OptionsForm fields={basicFields} values={options} onChange={setOption} />
+          <OptionsForm
+            fields={basicFields}
+            values={options}
+            onChange={setOption}
+          />
           {advancedFields.length > 0 && (
             <details className="advanced">
               <summary>
                 Advanced settings
-                {advancedChanged > 0 && <span className="changed"> · {advancedChanged} changed</span>}
+                {advancedChanged > 0 && (
+                  <span className="changed"> · {advancedChanged} changed</span>
+                )}
               </summary>
-              <OptionsForm fields={advancedFields} values={options} onChange={setOption} />
+              <OptionsForm
+                fields={advancedFields}
+                values={options}
+                onChange={setOption}
+              />
             </details>
           )}
           <div className="output-row">
@@ -175,7 +207,8 @@ export function App() {
           <div className="actions">
             {finished.length > 0 && (
               <span className="summary">
-                {finished.length} done · {formatBytes(totalIn)} → {formatBytes(totalOut)}
+                {finished.length} done · {formatBytes(totalIn)} →{' '}
+                {formatBytes(totalOut)}
               </span>
             )}
             <span className="spacer" />
@@ -184,7 +217,9 @@ export function App() {
                 className="ghost"
                 onClick={async () => {
                   await api.clearFinished();
-                  setJobs(new Map((await api.listJobs()).map((j) => [j.id, j])));
+                  setJobs(
+                    new Map((await api.listJobs()).map((j) => [j.id, j])),
+                  );
                 }}
               >
                 Clear finished
@@ -201,7 +236,9 @@ export function App() {
         <FileList
           pending={pending}
           jobs={toolJobs}
-          onRemovePending={(p) => setPending((prev) => prev.filter((x) => x !== p))}
+          onRemovePending={(p) =>
+            setPending((prev) => prev.filter((x) => x !== p))
+          }
         />
       </main>
     </div>

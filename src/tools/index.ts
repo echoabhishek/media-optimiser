@@ -16,6 +16,9 @@ export function getTool(id: string): ToolDefinition | undefined {
 }
 
 /** Strips `run` so the manifest can cross IPC. */
-export function toManifest({ run: _run, ...manifest }: ToolDefinition): ToolManifest {
+export function toManifest({
+  run: _run,
+  ...manifest
+}: ToolDefinition): ToolManifest {
   return manifest;
 }

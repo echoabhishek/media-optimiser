@@ -26,17 +26,21 @@ export function getCliArgs(): string[] | null {
 /** Runs the CLI and resolves with the process exit code. */
 export async function runCli(args: string[]): Promise<number> {
   const [command, ...rest] = args;
-  if (command === '--version' || command === '-v') return print(app.getVersion());
+  if (command === '--version' || command === '-v')
+    return print(app.getVersion());
   if (command === 'list') return print(listText());
   const tool = findTool(command);
   if (!tool) return print(usageText());
-  if (rest.includes('--help') || rest.includes('-h')) return print(toolHelpText(tool));
+  if (rest.includes('--help') || rest.includes('-h'))
+    return print(toolHelpText(tool));
 
   let parsed: { files: string[]; options: OptionValues; outDir?: string };
   try {
     parsed = parseToolArgs(tool, rest);
   } catch (err) {
-    console.error(`${(err as Error).message}\nRun "${BIN} ${cliName(tool)} --help" for usage.`);
+    console.error(
+      `${(err as Error).message}\nRun "${BIN} ${cliName(tool)} --help" for usage.`,
+    );
     return 2;
   }
   return convert(tool, parsed.files, parsed.options, parsed.outDir);
@@ -72,16 +76,26 @@ ${listText()}`;
 function listText(): string {
   const width = Math.max(...tools.map((t) => cliName(t).length)) + 2;
   return `Tools:\n${tools
-    .map((t) => `  ${cliName(t).padEnd(width)}${t.kind}/${t.operation}  ${t.description}`)
+    .map(
+      (t) =>
+        `  ${cliName(t).padEnd(width)}${t.kind}/${t.operation}  ${t.description}`,
+    )
     .join('\n')}`;
 }
 
 function toolHelpText(tool: ToolDefinition): string {
-  const toRow = (f: OptionField): [string, string] => [flagSyntax(f), flagHelp(f)];
+  const toRow = (f: OptionField): [string, string] => [
+    flagSyntax(f),
+    flagHelp(f),
+  ];
   const rows = tool.options.filter((f) => !f.advanced).map(toRow);
-  rows.push(['--out <dir>', 'Output folder (default: next to each input file)']);
+  rows.push([
+    '--out <dir>',
+    'Output folder (default: next to each input file)',
+  ]);
   const advanced = tool.options.filter((f) => f.advanced).map(toRow);
-  const width = Math.max(...[...rows, ...advanced].map(([flag]) => flag.length)) + 2;
+  const width =
+    Math.max(...[...rows, ...advanced].map(([flag]) => flag.length)) + 2;
   const section = (r: [string, string][]) =>
     r.map(([flag, help]) => `  ${flag.padEnd(width)}${help}`).join('\n');
   return `${tool.name}: ${tool.description}
@@ -100,18 +114,23 @@ Example:
 }
 
 function flagSyntax(f: OptionField): string {
-  if (f.type === 'select') return `--${f.key} <${f.choices.map((c) => c.value).join('|')}>`;
+  if (f.type === 'select')
+    return `--${f.key} <${f.choices.map((c) => c.value).join('|')}>`;
   if (f.type === 'number') return `--${f.key} <${f.min}-${f.max}>`;
   return `--${f.key}, --no-${f.key}`;
 }
 
 function flagHelp(f: OptionField): string {
-  const def = f.type === 'select' ? f.choices.find((c) => c.value === f.default)?.label : f.default;
+  const def =
+    f.type === 'select'
+      ? f.choices.find((c) => c.value === f.default)?.label
+      : f.default;
   return `${f.label} (default: ${String(def)})`;
 }
 
 function exampleValue(f: OptionField): string {
-  if (f.type === 'select') return f.choices.find((c) => c.value !== f.default)?.value ?? f.default;
+  if (f.type === 'select')
+    return f.choices.find((c) => c.value !== f.default)?.value ?? f.default;
   return String(f.default);
 }
 
@@ -139,7 +158,9 @@ export function parseToolArgs(tool: ToolDefinition, args: string[]) {
       continue;
     }
     const negated = rawKey.startsWith('no-');
-    const field = tool.options.find((f) => f.key === (negated ? rawKey.slice(3) : rawKey));
+    const field = tool.options.find(
+      (f) => f.key === (negated ? rawKey.slice(3) : rawKey),
+    );
     if (!field) throw new Error(`Unknown option --${rawKey}`);
 
     if (field.type === 'toggle') {
@@ -147,13 +168,17 @@ export function parseToolArgs(tool: ToolDefinition, args: string[]) {
     } else if (field.type === 'select') {
       const v = takeValue();
       if (!field.choices.some((c) => c.value === v)) {
-        throw new Error(`Invalid --${field.key} "${v}". Use one of: ${field.choices.map((c) => c.value).join(', ')}`);
+        throw new Error(
+          `Invalid --${field.key} "${v}". Use one of: ${field.choices.map((c) => c.value).join(', ')}`,
+        );
       }
       options[field.key] = v;
     } else {
       const v = Number(takeValue());
       if (!Number.isFinite(v) || v < field.min || v > field.max) {
-        throw new Error(`--${field.key} must be a number from ${field.min} to ${field.max}`);
+        throw new Error(
+          `--${field.key} must be a number from ${field.min} to ${field.max}`,
+        );
       }
       options[field.key] = v;
     }
@@ -163,10 +188,15 @@ export function parseToolArgs(tool: ToolDefinition, args: string[]) {
   for (const f of files) {
     if (!fs.existsSync(f)) throw new Error(`File not found: ${f}`);
     if (!tool.inputExtensions.includes(extension(f))) {
-      throw new Error(`Unsupported file: ${basename(f)} (accepts ${tool.inputExtensions.map((e) => `.${e}`).join(', ')})`);
+      throw new Error(
+        `Unsupported file: ${basename(f)} (accepts ${tool.inputExtensions.map((e) => `.${e}`).join(', ')})`,
+      );
     }
   }
-  if (outDir && !fs.statSync(outDir, { throwIfNoEntry: false })?.isDirectory()) {
+  if (
+    outDir &&
+    !fs.statSync(outDir, { throwIfNoEntry: false })?.isDirectory()
+  ) {
     throw new Error(`Output folder not found: ${outDir}`);
   }
   return { files: [...new Set(files)], options, outDir };
@@ -195,7 +225,10 @@ async function convert(
       const index = files.indexOf(job.inputPath) + 1;
       const label = `[${index}/${files.length}] ${basename(job.inputPath)}`;
       if (job.status === 'running') {
-        if (tty) process.stdout.write(`\r\x1b[K${label}  ${Math.round((job.progress ?? 0) * 100)}%`);
+        if (tty)
+          process.stdout.write(
+            `\r\x1b[K${label}  ${Math.round((job.progress ?? 0) * 100)}%`,
+          );
         return;
       }
       if (job.status === 'queued') return;
@@ -209,13 +242,22 @@ async function convert(
         );
       } else {
         failed++;
-        console.error(`✗ ${label}  ${job.status === 'error' ? job.error : 'cancelled'}`);
+        console.error(
+          `✗ ${label}  ${job.status === 'error' ? job.error : 'cancelled'}`,
+        );
       }
       if (--remaining === 0) resolve();
     });
   });
 
-  await runner.enqueue(files.map((inputPath) => ({ toolId: tool.id, inputPath, options, outputDir: outDir })));
+  await runner.enqueue(
+    files.map((inputPath) => ({
+      toolId: tool.id,
+      inputPath,
+      options,
+      outputDir: outDir,
+    })),
+  );
   await finished;
   return failed ? 1 : 0;
 }

@@ -28,9 +28,21 @@ export const movToMp4: ToolDefinition = {
       label: 'Quality',
       default: 'balanced',
       choices: [
-        { value: 'high', label: 'High', help: 'Visually lossless. Larger file.' },
-        { value: 'balanced', label: 'Balanced', help: 'Looks the same as the original in normal viewing.' },
-        { value: 'small', label: 'Smallest', help: 'Noticeably softer, best for sharing quickly.' },
+        {
+          value: 'high',
+          label: 'High',
+          help: 'Visually lossless. Larger file.',
+        },
+        {
+          value: 'balanced',
+          label: 'Balanced',
+          help: 'Looks the same as the original in normal viewing.',
+        },
+        {
+          value: 'small',
+          label: 'Smallest',
+          help: 'Noticeably softer, best for sharing quickly.',
+        },
       ],
     },
     {
@@ -72,8 +84,16 @@ export const movToMp4: ToolDefinition = {
       label: 'Content',
       default: 'screen',
       choices: [
-        { value: 'screen', label: 'Screen recording', help: 'Tuned for sharp text and mostly-still frames.' },
-        { value: 'camera', label: 'Camera footage', help: 'Tuned for natural motion and grain.' },
+        {
+          value: 'screen',
+          label: 'Screen recording',
+          help: 'Tuned for sharp text and mostly-still frames.',
+        },
+        {
+          value: 'camera',
+          label: 'Camera footage',
+          help: 'Tuned for natural motion and grain.',
+        },
       ],
     },
     {
@@ -83,9 +103,17 @@ export const movToMp4: ToolDefinition = {
       label: 'Encoding speed',
       default: 'slow',
       choices: [
-        { value: 'fast', label: 'Fast', help: 'Quicker, slightly larger file.' },
+        {
+          value: 'fast',
+          label: 'Fast',
+          help: 'Quicker, slightly larger file.',
+        },
         { value: 'medium', label: 'Medium' },
-        { value: 'slow', label: 'Thorough', help: 'Slower, smallest file at the same quality.' },
+        {
+          value: 'slow',
+          label: 'Thorough',
+          help: 'Slower, smallest file at the same quality.',
+        },
       ],
     },
     {
@@ -95,8 +123,16 @@ export const movToMp4: ToolDefinition = {
       label: 'Audio',
       default: 'aac160',
       choices: [
-        { value: 'aac160', label: 'AAC 160 kbps', help: 'Transparent for speech and most music.' },
-        { value: 'aac256', label: 'AAC 256 kbps', help: 'For music where every detail matters.' },
+        {
+          value: 'aac160',
+          label: 'AAC 160 kbps',
+          help: 'Transparent for speech and most music.',
+        },
+        {
+          value: 'aac256',
+          label: 'AAC 256 kbps',
+          help: 'For music where every detail matters.',
+        },
         { value: 'none', label: 'Remove audio' },
       ],
     },
@@ -114,16 +150,21 @@ export const movToMp4: ToolDefinition = {
     // Video: first video stream only. This skips timecode/data tracks that
     // QuickTime files carry and MP4 can't hold.
     args.push('-map', '0:v:0');
-    const maxH = options.resolution === 'original' ? 0 : Number(options.resolution);
+    const maxH =
+      options.resolution === 'original' ? 0 : Number(options.resolution);
     if (maxH && info.height && info.height > maxH) {
       // -2 keeps the aspect ratio and an even width (required by yuv420p).
       args.push('-vf', `scale=-2:${maxH}:flags=lanczos`);
     }
     args.push(
-      '-c:v', codec === 'h265' ? 'libx265' : 'libx264',
-      '-preset', String(options.speed),
-      '-crf', String(CRF[codec][quality]),
-      '-pix_fmt', 'yuv420p',
+      '-c:v',
+      codec === 'h265' ? 'libx265' : 'libx264',
+      '-preset',
+      String(options.speed),
+      '-crf',
+      String(CRF[codec][quality]),
+      '-pix_fmt',
+      'yuv420p',
     );
     if (codec === 'h264') {
       args.push('-tune', options.content === 'screen' ? 'stillimage' : 'film');
@@ -137,9 +178,12 @@ export const movToMp4: ToolDefinition = {
       args.push('-an');
     } else {
       args.push(
-        '-map', '0:a?',
-        '-c:a', 'aac',
-        '-b:a', options.audio === 'aac256' ? '256k' : '160k',
+        '-map',
+        '0:a?',
+        '-c:a',
+        'aac',
+        '-b:a',
+        options.audio === 'aac256' ? '256k' : '160k',
       );
     }
 

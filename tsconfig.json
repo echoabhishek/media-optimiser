@@ -12,18 +12,8 @@
     "jsx": "react-jsx",
     "strict": true,
     "noEmit": true,
-    "lib": [
-      "ESNext",
-      "DOM",
-      "DOM.Iterable"
-    ],
-    "types": [
-      "node"
-    ]
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "types": ["node"]
   },
-  "include": [
-    "src/**/*",
-    "*.ts",
-    "*.mts"
-  ]
+  "include": ["src/**/*", "*.ts", "*.mts"]
 }

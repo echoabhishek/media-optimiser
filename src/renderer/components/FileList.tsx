@@ -23,7 +23,9 @@ export function FileList({ pending, jobs, onRemovePending }: Props) {
           </div>
           {(job.status === 'running' || job.status === 'queued') && (
             <div className="progress" aria-hidden>
-              <div style={{ width: `${Math.round((job.progress ?? 0) * 100)}%` }} />
+              <div
+                style={{ width: `${Math.round((job.progress ?? 0) * 100)}%` }}
+              />
             </div>
           )}
           <div className="file-actions">
@@ -34,10 +36,16 @@ export function FileList({ pending, jobs, onRemovePending }: Props) {
             )}
             {job.status === 'done' && job.outputPath && (
               <>
-                <button className="ghost" onClick={() => api.openPath(job.outputPath!)}>
+                <button
+                  className="ghost"
+                  onClick={() => api.openPath(job.outputPath!)}
+                >
                   Open
                 </button>
-                <button className="ghost" onClick={() => api.revealPath(job.outputPath!)}>
+                <button
+                  className="ghost"
+                  onClick={() => api.revealPath(job.outputPath!)}
+                >
                   Show in folder
                 </button>
               </>
@@ -54,7 +62,11 @@ export function FileList({ pending, jobs, onRemovePending }: Props) {
             <span className="file-detail">Ready</span>
           </div>
           <div className="file-actions">
-            <button className="ghost" onClick={() => onRemovePending(p)} aria-label="Remove">
+            <button
+              className="ghost"
+              onClick={() => onRemovePending(p)}
+              aria-label="Remove"
+            >
               Remove
             </button>
           </div>
@@ -67,12 +79,18 @@ export function FileList({ pending, jobs, onRemovePending }: Props) {
 function JobDetail({ job }: { job: JobState }) {
   switch (job.status) {
     case 'queued':
-      return <span className="file-detail">Waiting · {formatBytes(job.inputBytes)}</span>;
+      return (
+        <span className="file-detail">
+          Waiting · {formatBytes(job.inputBytes)}
+        </span>
+      );
     case 'running':
       return (
         <span className="file-detail">
-          {job.progress != null ? `${Math.round(job.progress * 100)}%` : 'Working…'} ·{' '}
-          {formatBytes(job.inputBytes)}
+          {job.progress != null
+            ? `${Math.round(job.progress * 100)}%`
+            : 'Working…'}{' '}
+          · {formatBytes(job.inputBytes)}
         </span>
       );
     case 'done': {
@@ -87,7 +105,10 @@ function JobDetail({ job }: { job: JobState }) {
               : ` ${Math.round(-saved * 100)}% larger`}
           </span>
           {job.startedAt && job.finishedAt && (
-            <span className="muted"> · {formatDuration(job.finishedAt - job.startedAt)}</span>
+            <span className="muted">
+              {' '}
+              · {formatDuration(job.finishedAt - job.startedAt)}
+            </span>
           )}
         </span>
       );

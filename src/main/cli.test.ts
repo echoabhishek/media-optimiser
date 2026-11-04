@@ -5,7 +5,9 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { movToMp4 } from '../tools/video/mov-to-mp4';
 import { parseToolArgs } from './cli';
 
-vi.mock('electron', () => ({ app: { isPackaged: false, getAppPath: () => process.cwd() } }));
+vi.mock('electron', () => ({
+  app: { isPackaged: false, getAppPath: () => process.cwd() },
+}));
 
 let dir: string;
 let mov: string;
@@ -22,7 +24,9 @@ const parse = (...args: string[]) => parseToolArgs(movToMp4, args);
 
 describe('parseToolArgs', () => {
   it('parses files, --key value and --key=value', () => {
-    expect(parse(mov, '--codec', 'h265', '--quality=small', '--out', dir)).toEqual({
+    expect(
+      parse(mov, '--codec', 'h265', '--quality=small', '--out', dir),
+    ).toEqual({
       files: [mov],
       options: { codec: 'h265', quality: 'small' },
       outDir: dir,
@@ -42,7 +46,9 @@ describe('parseToolArgs', () => {
     [['MOV', '--codec'], 'Missing value for --codec'],
     [['MOV', '--out', '/no/such/folder'], 'Output folder not found'],
   ])('rejects %j', (args, message) => {
-    const resolved = args.map((a) => (a === 'MOV' ? mov : a === 'PHOTO' ? path.join(dir, 'photo.png') : a));
+    const resolved = args.map((a) =>
+      a === 'MOV' ? mov : a === 'PHOTO' ? path.join(dir, 'photo.png') : a,
+    );
     expect(() => parse(...resolved)).toThrow(message);
   });
 });

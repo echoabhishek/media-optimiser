@@ -21,8 +21,14 @@ export function OptionsForm({ fields, values, onChange }: Props) {
               </span>
             )}
           </label>
-          <Field field={f} value={values[f.key] ?? f.default} onChange={(v) => onChange(f.key, v)} />
-          <p className="option-help">{helpFor(f, values[f.key] ?? f.default)}</p>
+          <Field
+            field={f}
+            value={values[f.key] ?? f.default}
+            onChange={(v) => onChange(f.key, v)}
+          />
+          <p className="option-help">
+            {helpFor(f, values[f.key] ?? f.default)}
+          </p>
         </div>
       ))}
     </div>
@@ -66,7 +72,11 @@ function Field({
         );
       }
       return (
-        <select id={`opt-${f.key}`} value={String(value)} onChange={(e) => onChange(e.target.value)}>
+        <select
+          id={`opt-${f.key}`}
+          value={String(value)}
+          onChange={(e) => onChange(e.target.value)}
+        >
           {f.choices.map((c) => (
             <option key={c.value} value={c.value}>
               {c.label}

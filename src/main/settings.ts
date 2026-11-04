@@ -3,7 +3,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import type { AppSettings } from '../shared/types';
 
-const DEFAULTS: AppSettings = { selectedToolId: null, outputDir: null, toolOptions: {} };
+const DEFAULTS: AppSettings = {
+  selectedToolId: null,
+  outputDir: null,
+  toolOptions: {},
+};
 
 /**
  * User settings persisted as JSON in the OS app-data folder
@@ -35,7 +39,9 @@ export class SettingsStore {
 
   private read(): AppSettings {
     try {
-      const parsed = JSON.parse(fs.readFileSync(this.file, 'utf8')) as Partial<AppSettings>;
+      const parsed = JSON.parse(
+        fs.readFileSync(this.file, 'utf8'),
+      ) as Partial<AppSettings>;
       return { ...DEFAULTS, ...parsed, toolOptions: parsed.toolOptions ?? {} };
     } catch {
       return { ...DEFAULTS };

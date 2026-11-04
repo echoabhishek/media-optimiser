@@ -24,12 +24,19 @@ function resolveFfmpeg(): string {
     process.env.MEDIA_OPTIMISER_FFMPEG,
     app.isPackaged
       ? path.join(process.resourcesPath, `ffmpeg${exe}`)
-      : path.join(app.getAppPath(), 'node_modules', 'ffmpeg-static', `ffmpeg${exe}`),
+      : path.join(
+          app.getAppPath(),
+          'node_modules',
+          'ffmpeg-static',
+          `ffmpeg${exe}`,
+        ),
   ].filter((p): p is string => !!p);
 
   const found = candidates.find((p) => fs.existsSync(p));
   if (!found) {
-    throw new Error(`ffmpeg binary not found. Looked in:\n${candidates.join('\n')}`);
+    throw new Error(
+      `ffmpeg binary not found. Looked in:\n${candidates.join('\n')}`,
+    );
   }
   return found;
 }

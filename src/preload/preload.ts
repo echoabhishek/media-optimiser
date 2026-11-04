@@ -15,7 +15,8 @@ const api: MediaApi = {
   listJobs: () => ipcRenderer.invoke(IPC.listJobs),
   clearFinished: () => ipcRenderer.invoke(IPC.clearFinished),
   onJobUpdate: (listener) => {
-    const handler = (_e: Electron.IpcRendererEvent, job: JobState) => listener(job);
+    const handler = (_e: Electron.IpcRendererEvent, job: JobState) =>
+      listener(job);
     ipcRenderer.on(IPC.jobUpdate, handler);
     return () => ipcRenderer.removeListener(IPC.jobUpdate, handler);
   },

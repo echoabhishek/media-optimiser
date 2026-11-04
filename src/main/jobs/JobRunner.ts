@@ -32,7 +32,8 @@ export class JobRunner extends EventEmitter<{ update: [JobState] }> {
   async enqueue(requests: JobRequest[]): Promise<JobState[]> {
     const added: JobState[] = [];
     for (const request of requests) {
-      if (!getTool(request.toolId)) throw new Error(`Unknown tool ${request.toolId}`);
+      if (!getTool(request.toolId))
+        throw new Error(`Unknown tool ${request.toolId}`);
       const stat = await fs.stat(request.inputPath);
       const state: JobState = {
         id: randomUUID(),
@@ -82,13 +83,16 @@ export class JobRunner extends EventEmitter<{ update: [JobState] }> {
 
   clearFinished(): void {
     for (const [id, job] of this.jobs) {
-      if (!['queued', 'running'].includes(job.state.status)) this.jobs.delete(id);
+      if (!['queued', 'running'].includes(job.state.status))
+        this.jobs.delete(id);
     }
   }
 
   private pump(): void {
     while (this.running < this.concurrency) {
-      const next = [...this.jobs.values()].find((j) => j.state.status === 'queued');
+      const next = [...this.jobs.values()].find(
+        (j) => j.state.status === 'queued',
+      );
       if (!next) return;
       this.running++;
       void this.execute(next).finally(() => {
@@ -161,7 +165,8 @@ export async function uniqueOutputPath(
   const dir = outputDir ?? path.dirname(inputPath);
   const base = path.basename(inputPath, path.extname(inputPath));
   const candidates = [`${base}.${ext}`, `${base} (optimised).${ext}`];
-  for (let i = 2; i < 1000; i++) candidates.push(`${base} (optimised ${i}).${ext}`);
+  for (let i = 2; i < 1000; i++)
+    candidates.push(`${base} (optimised ${i}).${ext}`);
   for (const name of candidates) {
     const p = path.join(dir, name);
     if (path.resolve(p) === path.resolve(inputPath)) continue;

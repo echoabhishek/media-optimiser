@@ -10,7 +10,7 @@ Built with Electron Forge + Vite + React + TypeScript, with ffmpeg bundled. User
 ```sh
 npm install      # also downloads ffmpeg for your OS (ffmpeg-static)
 npm start        # run the app with hot reload
-npm run typecheck && npm test
+npm run typecheck && npm run lint && npm test
 npm run make     # build installers for the current OS into out/make
 ```
 
@@ -32,6 +32,7 @@ Exit codes: `0` success, `1` a file failed, `2` usage error, `130` cancelled (Ct
 In development: `npm start -- -- mov-to-mp4 file.mov`.
 
 Putting it on your `PATH`:
+
 - **macOS:** `sudo ln -sf "/Applications/Media Optimiser.app/Contents/MacOS/media-optimiser" /usr/local/bin/media-optimiser`
 - **Linux:** the `.deb` / `.rpm` installers already install `media-optimiser`.
 - **Windows:** add the install folder to `PATH`. Output may not appear in `cmd`, because the `.exe` is a GUI app.
@@ -82,14 +83,14 @@ For a new back-end (e.g. `sharp` for images), add it to `Engines` in
 
 ## MOV to MP4: encoding choices
 
-| Setting | What it does |
-|---|---|
-| H.264 (default) | libx264, CRF 19/23/28 for High/Balanced/Smallest. Plays everywhere. |
-| H.265 / HEVC | libx265, CRF 22/26/31, tagged `hvc1` so QuickTime/Safari play it. Often smaller on long/busy video, about 8× slower to encode. |
-| Screen recording | `-tune stillimage` (sharp text, still frames); Camera uses `-tune film` |
-| Max resolution | Downscales only if larger (Lanczos), keeps aspect ratio |
-| Audio | AAC 160k/256k, or removed. Skipped automatically if the source has none |
-| Always | `yuv420p`, `+faststart` (web streaming), metadata copied, only the first video track (drops QuickTime timecode tracks) |
+| Setting          | What it does                                                                                                                   |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| H.264 (default)  | libx264, CRF 19/23/28 for High/Balanced/Smallest. Plays everywhere.                                                            |
+| H.265 / HEVC     | libx265, CRF 22/26/31, tagged `hvc1` so QuickTime/Safari play it. Often smaller on long/busy video, about 8× slower to encode. |
+| Screen recording | `-tune stillimage` (sharp text, still frames); Camera uses `-tune film`                                                        |
+| Max resolution   | Downscales only if larger (Lanczos), keeps aspect ratio                                                                        |
+| Audio            | AAC 160k/256k, or removed. Skipped automatically if the source has none                                                        |
+| Always           | `yuv420p`, `+faststart` (web streaming), metadata copied, only the first video track (drops QuickTime timecode tracks)         |
 
 Outputs are written as `name.mp4.part.mp4`, then renamed when complete, so a cancelled job never leaves a broken file.
 Existing files are never overwritten: if `name.mp4` exists, the output becomes `name (optimised).mp4`.
