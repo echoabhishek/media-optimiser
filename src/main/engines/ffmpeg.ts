@@ -87,7 +87,9 @@ export class FfmpegEngine {
     /** Where the output starts within the reference (after a trim). */
     referenceOffset = 0,
   ): Promise<number | null> {
-    const limit = seconds == null ? [] : ['-t', String(seconds)];
+    // Still images: FFmpeg 7 emits no frame for two single-image inputs, so
+    // loop each and compare exactly one frame (works on 6 as well).
+    const limit = seconds == null ? ['-loop', '1'] : ['-t', String(seconds)];
     const offset = referenceOffset ? ['-ss', String(referenceOffset)] : [];
     const { stderr } = await this.exec(
       [
@@ -105,6 +107,7 @@ export class FfmpegEngine {
         '-lavfi',
         '[1:v][0:v]scale2ref=flags=bicubic[ref][out];' +
           '[ref]format=gray[r];[out]format=gray[o];[o][r]ssim',
+        ...(seconds == null ? ['-frames:v', '1'] : []),
         '-f',
         'null',
         '-',

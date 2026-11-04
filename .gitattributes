@@ -1,0 +1,7 @@
+# Keep LF line endings on every OS (Windows checkouts default to CRLF, which
+# fails the oxfmt format check).
+* text=auto eol=lf
+
+*.png binary
+*.ico binary
+*.icns binary
