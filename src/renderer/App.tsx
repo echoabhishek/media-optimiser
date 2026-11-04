@@ -102,6 +102,14 @@ export function App() {
         : null,
     );
     setPending((prev) => [...prev, ...ok.filter((p) => !prev.includes(p))]);
+    // Bring the new files (and the Convert button) into view.
+    if (ok.length) {
+      requestAnimationFrame(() =>
+        document
+          .querySelector('.file.pending:last-child')
+          ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }),
+      );
+    }
   };
 
   const start = async () => {
@@ -221,7 +229,11 @@ export function App() {
           </div>
         </section>
 
-        <DropZone extensions={tool.inputExtensions} onFiles={addFiles} />
+        <DropZone
+          extensions={tool.inputExtensions}
+          onFiles={addFiles}
+          compact={pending.length > 0 || toolJobs.length > 0}
+        />
         {notice && <p className="notice">{notice}</p>}
 
         {(pending.length > 0 || hasFinished) && (
@@ -230,6 +242,12 @@ export function App() {
               <span className="summary">
                 {finished.length} done · {formatBytes(totalIn)} →{' '}
                 {formatBytes(totalOut)}
+              </span>
+            )}
+            {pending.length > 0 && (
+              <span className="summary">
+                {finished.length > 0 && ' · '}
+                {pending.length} waiting
               </span>
             )}
             <span className="spacer" />

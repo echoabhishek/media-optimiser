@@ -401,6 +401,25 @@ select {
   align-items: center;
   gap: 8px;
   margin: 16px 0 8px;
+  /* Stays visible at the bottom while the file list is scrolled out of view. */
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  padding: 10px 0;
+  background: var(--bg);
+}
+
+.dropzone.compact {
+  flex-direction: row;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 16px;
+}
+
+.dropzone.compact svg {
+  width: 18px;
+  height: 18px;
+  margin: 0;
 }
 
 .spacer {

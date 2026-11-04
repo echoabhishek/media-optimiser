@@ -3,9 +3,11 @@ import { useState } from 'react';
 interface Props {
   extensions: string[];
   onFiles(paths: string[]): void;
+  /** Smaller once files are listed, so the list stays in view. */
+  compact?: boolean;
 }
 
-export function DropZone({ extensions, onFiles }: Props) {
+export function DropZone({ extensions, onFiles, compact }: Props) {
   const [over, setOver] = useState(false);
 
   const browse = async () => {
@@ -16,7 +18,7 @@ export function DropZone({ extensions, onFiles }: Props) {
   return (
     <button
       type="button"
-      className={`dropzone ${over ? 'over' : ''}`}
+      className={`dropzone ${over ? 'over' : ''} ${compact ? 'compact' : ''}`}
       onClick={browse}
       onDragOver={(e) => {
         e.preventDefault();
