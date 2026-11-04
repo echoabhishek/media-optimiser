@@ -1,5 +1,5 @@
 import type { JobState } from '../../shared/types';
-import { basename, formatBytes, formatDuration } from '../format';
+import { basename, formatBytes, formatDuration } from '../../shared/format';
 
 interface Props {
   pending: string[];

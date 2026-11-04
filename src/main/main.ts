@@ -1,6 +1,7 @@
 import { app, BrowserWindow, shell } from 'electron';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
+import { getCliArgs, runCli } from './cli';
 import { registerIpc } from './ipc';
 import { JobRunner } from './jobs/JobRunner';
 import { SettingsStore } from './settings';
@@ -42,13 +43,27 @@ const createWindow = () => {
   }
 };
 
-app.whenReady().then(() => {
-  registerIpc(runner, new SettingsStore());
-  createWindow();
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+const cliArgs = getCliArgs();
+
+if (cliArgs) {
+  app.dock?.hide();
+  void app
+    .whenReady()
+    .then(() => runCli(cliArgs))
+    .catch((err: Error) => {
+      console.error(err.message);
+      return 1;
+    })
+    .then((code) => app.exit(code));
+} else {
+  app.whenReady().then(() => {
+    registerIpc(runner, new SettingsStore());
+    createWindow();
+    app.on('activate', () => {
+      if (BrowserWindow.getAllWindows().length === 0) createWindow();
+    });
   });
-});
+}
 
 // Kill any running ffmpeg and delete partial files before the app exits.
 app.on('will-quit', () => runner.shutdown());

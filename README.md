@@ -18,6 +18,24 @@ Installers per OS: `.zip` (macOS), Squirrel `Setup.exe` (Windows), `.deb` / `.rp
 `ffmpeg-static` downloads the ffmpeg binary for the OS you build on, so **build each OS on that OS**.
 `.github/workflows/build.yml` does this on GitHub Actions (run it manually, or push a `v*` tag).
 
+## Command line
+
+The same app binary works as a CLI. Each tool is a command, and its flags are generated from the tool's options.
+
+```sh
+media-optimiser list                       # available tools
+media-optimiser mov-to-mp4 --help          # a tool's options
+media-optimiser mov-to-mp4 ~/Downloads/*.mov --codec h265 --resolution 1080 --out ~/Desktop
+```
+
+Exit codes: `0` success, `1` a file failed, `2` usage error, `130` cancelled (Ctrl+C).
+In development: `npm start -- -- mov-to-mp4 file.mov`.
+
+Putting it on your `PATH`:
+- **macOS:** `sudo ln -sf "/Applications/Media Optimiser.app/Contents/MacOS/media-optimiser" /usr/local/bin/media-optimiser`
+- **Linux:** the `.deb` / `.rpm` installers already install `media-optimiser`.
+- **Windows:** add the install folder to `PATH`. Output may not appear in `cmd`, because the `.exe` is a GUI app.
+
 ## Architecture
 
 ```
@@ -30,7 +48,8 @@ src/
     index.ts         Tool registry
     video/mov-to-mp4.ts
   main/              Electron main process (Node)
-    main.ts          Window, security settings
+    main.ts          Window, security settings; switches to CLI mode when given a command
+    cli.ts           CLI: arg parsing, help generated from tool manifests
     ipc.ts           IPC handlers (dialogs, jobs, shell)
     settings.ts      User settings → settings.json in the OS app-data folder
     jobs/JobRunner.ts  Queue, progress, cancel, temp-file → rename, unique names

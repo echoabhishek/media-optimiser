@@ -4,7 +4,7 @@ import { DropZone } from './components/DropZone';
 import { FileList } from './components/FileList';
 import { OptionsForm } from './components/OptionsForm';
 import { Sidebar } from './components/Sidebar';
-import { basename, extension, formatBytes } from './format';
+import { basename, extension, formatBytes } from '../shared/format';
 
 const api = window.mediaApi;
 
