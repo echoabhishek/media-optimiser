@@ -13,14 +13,11 @@ d = ImageDraw.Draw(icon)
 d.rounded_rectangle([m, m, S - m, S - m], r, fill=(255, 255, 255, 255),
                     outline=(227, 231, 239, 255), width=int(S * 0.006))
 
-# Studio mark: one shape per media type (video, audio, image), laid out on
-# an 88-unit grid inside the tile.
+# "Shrink" mark: three bars getting shorter (files getting smaller), one per
+# media type (video, audio, image), on an 88-unit grid inside the tile.
 k = (S - 2 * m) / 88
-def box(x0, y0, x1, y1):
-    return [m + x0 * k, m + y0 * k, m + x1 * k, m + y1 * k]
-d.rounded_rectangle(box(16, 16, 50, 50), 10 * k, fill=(229, 72, 77, 255))
-d.ellipse(box(44, 22, 72, 50), fill=(123, 97, 255, 255))
-d.rounded_rectangle(box(34, 50, 64, 72), 8 * k, fill=(43, 168, 74, 255))
+for y, w, colour in ((19, 52, (229, 72, 77)), (37, 38, (123, 97, 255)), (55, 24, (43, 168, 74))):
+    d.rounded_rectangle([m + 18 * k, m + y * k, m + (18 + w) * k, m + (y + 14) * k], 7 * k, fill=colour + (255,))
 
 png = icon.resize((1024, 1024), Image.LANCZOS)
 png.save(os.path.join(OUT, 'icon.png'))
