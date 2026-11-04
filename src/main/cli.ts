@@ -2,7 +2,12 @@ import { app } from 'electron';
 import fs from 'node:fs';
 import path from 'node:path';
 import { basename, extension, formatBytes } from '../shared/format';
-import type { JobState, OptionField, OptionValues } from '../shared/types';
+import type {
+  JobState,
+  OptionField,
+  OptionValues,
+  ToolPreset,
+} from '../shared/types';
 import { tools } from '../tools';
 import type { ToolDefinition } from '../tools/types';
 import { JobRunner } from './jobs/JobRunner';
@@ -90,6 +95,12 @@ function toolHelpText(tool: ToolDefinition): string {
     flagHelp(f),
   ];
   const rows = tool.options.filter((f) => !f.advanced).map(toRow);
+  if (tool.presets?.length) {
+    rows.unshift([
+      `--preset <${tool.presets.map((p) => p.id).join('|')}>`,
+      tool.presets.map((p) => `${p.id}: ${p.help ?? p.label}`).join('; '),
+    ]);
+  }
   rows.push([
     '--out <dir>',
     'Output folder (default: next to each input file)',
@@ -110,15 +121,20 @@ ${advanced.length ? `\nAdvanced options:\n${section(advanced)}\n` : ''}
 Example:
   ${BIN} ${cliName(tool)} *.${tool.inputExtensions[0]} ${tool.options
     .slice(0, 2)
-    .map((f) => `--${f.key} ${exampleValue(f)}`)
+    .map((f) => `--${flag(f.key)} ${exampleValue(f)}`)
     .join(' ')}`;
+}
+
+/** `sizeLimit` → `size-limit`. */
+function flag(key: string): string {
+  return key.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
 }
 
 function flagSyntax(f: OptionField): string {
   if (f.type === 'select')
-    return `--${f.key} <${f.choices.map((c) => c.value).join('|')}>`;
-  if (f.type === 'number') return `--${f.key} <${f.min}-${f.max}>`;
-  return `--${f.key}, --no-${f.key}`;
+    return `--${flag(f.key)} <${f.choices.map((c) => c.value).join('|')}>`;
+  if (f.type === 'number') return `--${flag(f.key)} <${f.min}-${f.max}>`;
+  return `--${flag(f.key)}, --no-${flag(f.key)}`;
 }
 
 function flagHelp(f: OptionField): string {
@@ -140,6 +156,7 @@ export function parseToolArgs(tool: ToolDefinition, args: string[]) {
   const files: string[] = [];
   const options: OptionValues = {};
   let outDir: string | undefined;
+  let preset: ToolPreset | undefined;
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -154,13 +171,23 @@ export function parseToolArgs(tool: ToolDefinition, args: string[]) {
       return v;
     };
 
+    if (rawKey === 'preset') {
+      const id = takeValue();
+      preset = tool.presets?.find((p) => p.id === id);
+      if (!preset) {
+        throw new Error(
+          `Unknown preset "${id}". Use one of: ${(tool.presets ?? []).map((p) => p.id).join(', ')}`,
+        );
+      }
+      continue;
+    }
     if (rawKey === 'out') {
       outDir = path.resolve(takeValue());
       continue;
     }
     const negated = rawKey.startsWith('no-');
     const field = tool.options.find(
-      (f) => f.key === (negated ? rawKey.slice(3) : rawKey),
+      (f) => flag(f.key) === (negated ? rawKey.slice(3) : rawKey),
     );
     if (!field) throw new Error(`Unknown option --${rawKey}`);
 
@@ -170,7 +197,7 @@ export function parseToolArgs(tool: ToolDefinition, args: string[]) {
       const v = takeValue();
       if (!field.choices.some((c) => c.value === v)) {
         throw new Error(
-          `Invalid --${field.key} "${v}". Use one of: ${field.choices.map((c) => c.value).join(', ')}`,
+          `Invalid --${flag(field.key)} "${v}". Use one of: ${field.choices.map((c) => c.value).join(', ')}`,
         );
       }
       options[field.key] = v;
@@ -178,7 +205,7 @@ export function parseToolArgs(tool: ToolDefinition, args: string[]) {
       const v = Number(takeValue());
       if (!Number.isFinite(v) || v < field.min || v > field.max) {
         throw new Error(
-          `--${field.key} must be a number from ${field.min} to ${field.max}`,
+          `--${flag(field.key)} must be a number from ${field.min} to ${field.max}`,
         );
       }
       options[field.key] = v;
@@ -200,7 +227,12 @@ export function parseToolArgs(tool: ToolDefinition, args: string[]) {
   ) {
     throw new Error(`Output folder not found: ${outDir}`);
   }
-  return { files: [...new Set(files)], options, outDir };
+  return {
+    files: [...new Set(files)],
+    // Explicit flags override the preset.
+    options: { ...preset?.values, ...options },
+    outDir,
+  };
 }
 
 async function convert(

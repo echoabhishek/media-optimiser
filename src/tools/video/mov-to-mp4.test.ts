@@ -1,3 +1,6 @@
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { MediaInfo } from '../../main/engines/ffmpeg';
 import type { Engines } from '../../main/engines';
@@ -86,5 +89,97 @@ describe('mov-to-mp4', () => {
     await expect(argsFor({}, { hasVideo: false })).rejects.toThrow(
       'No video stream',
     );
+  });
+
+  it('caps frame rate without upsampling', async () => {
+    expect(valueOf(await argsFor({ fps: '30' }), '-fpsmax')).toBe('30');
+    expect(await argsFor({})).not.toContain('-fpsmax');
+  });
+
+  it('strips metadata but keeps the creation date by default', async () => {
+    const args = await argsFor({}, { creationTime: '2026-11-03T20:39:41Z' });
+    expect(valueOf(args, '-map_metadata')).toBe('-1');
+    expect(valueOf(args, '-metadata')).toBe(
+      'creation_time=2026-11-03T20:39:41Z',
+    );
+    expect(
+      valueOf(await argsFor({ keepMetadata: true }), '-map_metadata'),
+    ).toBe('0');
+  });
+
+  it('every preset only uses valid option values', () => {
+    for (const preset of movToMp4.presets ?? []) {
+      expect(resolveOptions(movToMp4.options, preset.values)).toMatchObject(
+        preset.values,
+      );
+    }
+  });
+});
+
+describe('mov-to-mp4 size limit', () => {
+  /** Runs with a fake ffmpeg whose output is `outputBytes` big; returns every call. */
+  async function encodes(
+    outputBytes: number,
+    options: OptionValues,
+    durationSec = 60,
+  ) {
+    const calls: string[][] = [];
+    const out = path.join(
+      fs.mkdtempSync(path.join(os.tmpdir(), 'mo-size-')),
+      'out.mp4',
+    );
+    const ffmpeg = {
+      probe: async () => ({
+        durationSec,
+        hasVideo: true,
+        hasAudio: true,
+        height: 1080,
+      }),
+      run: async (args: string[]) => {
+        calls.push(args);
+        if (args.at(-1) === out)
+          fs.writeFileSync(out, Buffer.alloc(outputBytes));
+      },
+    };
+    await movToMp4.run({
+      inputPath: 'in.mov',
+      outputPath: out,
+      options: resolveOptions(movToMp4.options, options),
+      engines: { ffmpeg } as unknown as Engines,
+      signal: new AbortController().signal,
+      onProgress: () => {},
+    });
+    return calls;
+  }
+
+  it('keeps the normal encode when it already fits', async () => {
+    const calls = await encodes(3_000_000, { sizeLimit: '10' });
+    expect(calls).toHaveLength(1);
+    expect(calls[0]).toContain('-crf');
+  });
+
+  it('re-encodes in two passes at the bitrate that fits', async () => {
+    const calls = await encodes(30_000_000, { sizeLimit: '10' });
+    expect(calls).toHaveLength(3);
+    const [, pass1, pass2] = calls;
+    expect(valueOf(pass1, '-pass')).toBe('1');
+    expect(pass1).toContain('-an');
+    expect(valueOf(pass2, '-pass')).toBe('2');
+    // 10 MB * 8 * 0.96 / 60 s = 1280 kbps total, minus 160 kbps audio.
+    expect(valueOf(pass2, '-b:v')).toBe('1120k');
+  });
+
+  it('uses x265 stats files for HEVC two-pass', async () => {
+    const [, pass1] = await encodes(30_000_000, {
+      sizeLimit: '10',
+      codec: 'h265',
+    });
+    expect(valueOf(pass1, '-x265-params')).toMatch(/pass=1:stats=.+\.log/);
+  });
+
+  it('refuses limits that would ruin quality', async () => {
+    await expect(
+      encodes(30_000_000, { sizeLimit: '10' }, 3600),
+    ).rejects.toThrow('too long to fit');
   });
 });

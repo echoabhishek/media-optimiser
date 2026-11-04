@@ -6,6 +6,8 @@ export interface MediaInfo {
   hasAudio: boolean;
   width?: number;
   height?: number;
+  /** ISO date from the container, kept when other metadata is stripped. */
+  creationTime?: string;
 }
 
 export interface RunOptions {
@@ -53,6 +55,7 @@ export class FfmpegEngine {
       hasAudio: /Stream #.*?Audio:/.test(stderr),
       width: size ? +size[1] : undefined,
       height: size ? +size[2] : undefined,
+      creationTime: /creation_time\s*:\s*(\S+)/.exec(stderr)?.[1],
     };
   }
 

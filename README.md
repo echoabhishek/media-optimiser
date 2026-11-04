@@ -96,6 +96,10 @@ For a new back-end (e.g. `sharp` for images), add it to `Engines` in
 | H.265 / HEVC     | libx265, CRF 22/26/31, tagged `hvc1` so QuickTime/Safari play it. Often smaller on long/busy video, about 8× slower to encode. |
 | Screen recording | `-tune stillimage` (sharp text, still frames); Camera uses `-tune film`                                                        |
 | Max resolution   | Downscales only if larger (Lanczos), keeps aspect ratio                                                                        |
+| Size limit       | CRF encode first; only if the result is too big, a two-pass encode at the bitrate that fits (fails clearly if under ~100 kbps) |
+| Max frame rate   | `-fpsmax`: caps the rate, never increases it                                                                                   |
+| Metadata         | Location and device info removed by default, creation date kept; advanced toggle keeps everything                              |
+| Presets          | Standard, Chat, GitHub (10 MB), Email (25 MB), Best quality. Also available on the command line as `--preset <id>`             |
 | Audio            | AAC 160k/256k, or removed. Skipped automatically if the source has none                                                        |
 | Always           | `yuv420p`, `+faststart` (web streaming), metadata copied, only the first video track (drops QuickTime timecode tracks)         |
 

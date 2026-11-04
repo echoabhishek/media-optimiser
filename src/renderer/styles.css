@@ -220,6 +220,35 @@ button.ghost:disabled:hover {
   font-weight: 500;
 }
 
+.presets {
+  margin-bottom: 16px;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  border: 1px solid var(--border);
+  background: var(--bg);
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+}
+
+.chip:hover {
+  border-color: var(--muted);
+}
+
+.chip.on {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
 .option-help {
   margin: 5px 0 0;
   font-size: 12px;

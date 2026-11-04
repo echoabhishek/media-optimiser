@@ -33,6 +33,28 @@ describe('parseToolArgs', () => {
     });
   });
 
+  it('uses kebab-case flags for camelCase options', () => {
+    expect(parse(mov, '--size-limit', '25', '--keep-metadata').options).toEqual(
+      {
+        sizeLimit: '25',
+        keepMetadata: true,
+      },
+    );
+  });
+
+  it('applies a preset, with explicit flags taking priority', () => {
+    expect(
+      parse(mov, '--quality', 'high', '--preset', 'github').options,
+    ).toMatchObject({
+      sizeLimit: '10',
+      resolution: '1080',
+      quality: 'high',
+    });
+    expect(() => parse(mov, '--preset', 'nope')).toThrow(
+      'Unknown preset "nope"',
+    );
+  });
+
   it('de-duplicates input files', () => {
     expect(parse(mov, mov).files).toEqual([mov]);
   });

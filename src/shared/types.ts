@@ -49,6 +49,14 @@ export type OptionField = SelectField | NumberField | ToggleField;
 export type OptionValue = string | number | boolean;
 export type OptionValues = Record<string, OptionValue>;
 
+/** A named bundle of option values, e.g. "GitHub (under 10 MB)". */
+export interface ToolPreset {
+  id: string;
+  label: string;
+  help?: string;
+  values: OptionValues;
+}
+
 /** The serialisable description of a tool, sent to the renderer. */
 export interface ToolManifest {
   id: string;
@@ -61,6 +69,7 @@ export interface ToolManifest {
   /** Extension of the produced file, without the dot. */
   outputExtension: string;
   options: OptionField[];
+  presets?: ToolPreset[];
 }
 
 /** Persisted user preferences (stored by the main process). */

@@ -3,6 +3,7 @@ import type { JobState, OptionValues, ToolManifest } from '../shared/types';
 import { DropZone } from './components/DropZone';
 import { FileList } from './components/FileList';
 import { OptionsForm } from './components/OptionsForm';
+import { Presets } from './components/Presets';
 import { Sidebar } from './components/Sidebar';
 import { basename, extension, formatBytes } from '../shared/format';
 import { resolveOptions } from '../shared/options';
@@ -158,6 +159,18 @@ export function App() {
               Restore defaults
             </button>
           </div>
+          {tool.presets && (
+            <Presets
+              presets={tool.presets}
+              values={options}
+              onApply={(values) =>
+                setOptionsByTool((prev) => ({
+                  ...prev,
+                  [tool.id]: { ...prev[tool.id], ...values },
+                }))
+              }
+            />
+          )}
           <OptionsForm
             fields={basicFields}
             values={options}
