@@ -130,12 +130,12 @@ export class FfmpegEngine {
   }
 }
 
-/** The most useful line: the last one that isn't ffmpeg's generic footer. */
+/** The most useful line: the last one with an actual reason in it. */
 function summarise(stderr: string): string {
   const lines = stderr
     .trim()
     .split('\n')
     .map((l) => l.trim())
-    .filter((l) => l && l !== 'Conversion failed!');
+    .filter((l) => l && l !== 'Conversion failed!' && !l.endsWith(':'));
   return lines.at(-1) ?? '';
 }
