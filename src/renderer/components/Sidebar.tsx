@@ -51,7 +51,6 @@ export function Sidebar({ tools, selectedId, onSelect }: Props) {
                   onClick={() => onSelect(t.id)}
                 >
                   {t.name}
-                  <span className={`badge ${t.operation}`}>{t.operation}</span>
                 </button>
               ))
             )}

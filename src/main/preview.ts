@@ -13,6 +13,15 @@ const MIME: Record<string, string> = {
   webm: 'video/webm',
   mkv: 'video/x-matroska',
   avi: 'video/x-msvideo',
+  mp3: 'audio/mpeg',
+  m4a: 'audio/mp4',
+  aac: 'audio/aac',
+  wav: 'audio/wav',
+  flac: 'audio/flac',
+  ogg: 'audio/ogg',
+  opus: 'audio/ogg',
+  aiff: 'audio/aiff',
+  aif: 'audio/aiff',
 };
 
 /** Must run before the app is ready. */

@@ -146,13 +146,6 @@ svg {
   background: none;
 }
 
-.badge {
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--muted);
-}
-
 /* ---------- Content ---------- */
 .content {
   overflow-y: auto;

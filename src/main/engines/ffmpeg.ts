@@ -8,6 +8,12 @@ export interface MediaInfo {
   height?: number;
   /** ISO date from the container, kept when other metadata is stripped. */
   creationTime?: string;
+  /** Album art embedded in an audio file (not counted as video). */
+  hasCoverArt?: boolean;
+  /** First audio stream's sample rate in Hz. */
+  sampleRate?: number;
+  /** True when the first audio stream is more than 16-bit. */
+  highBitDepth?: boolean;
 }
 
 export interface RunOptions {
@@ -48,11 +54,19 @@ export class FfmpegEngine {
       allowFailure: true,
     });
     const d = /Duration:\s*(\d+):(\d+):(\d+(?:\.\d+)?)/.exec(stderr);
-    const size = /Stream #.*?Video:.*?(\d{2,5})x(\d{2,5})/.exec(stderr);
+    const streams = stderr.split('\n').filter((l) => /Stream #/.test(l));
+    const video = streams.filter(
+      (l) => /Video:/.test(l) && !/attached pic/.test(l),
+    );
+    const audio = streams.find((l) => /Audio:/.test(l));
+    const size = /(\d{2,5})x(\d{2,5})/.exec(video[0] ?? '');
     return {
       durationSec: d ? +d[1] * 3600 + +d[2] * 60 + parseFloat(d[3]) : null,
-      hasVideo: /Stream #.*?Video:/.test(stderr),
-      hasAudio: /Stream #.*?Audio:/.test(stderr),
+      hasVideo: video.length > 0,
+      hasAudio: !!audio,
+      hasCoverArt: streams.some((l) => /attached pic/.test(l)),
+      sampleRate: Number(/(\d+) Hz/.exec(audio ?? '')?.[1]) || undefined,
+      highBitDepth: /s24|s32|flt|dbl|\(24 bit\)/.test(audio ?? ''),
       width: size ? +size[1] : undefined,
       height: size ? +size[2] : undefined,
       creationTime: /creation_time\s*:\s*(\S+)/.exec(stderr)?.[1],
@@ -98,8 +112,8 @@ export class FfmpegEngine {
     return m ? Number(m[1]) : null;
   }
 
-  /** Runs ffmpeg with the given arguments, reporting progress. */
-  async run(args: string[], opts: RunOptions = {}): Promise<void> {
+  /** Runs ffmpeg, reporting progress; resolves with its stderr tail. */
+  async run(args: string[], opts: RunOptions = {}): Promise<string> {
     const full = [
       '-hide_banner',
       '-nostdin',
@@ -111,7 +125,7 @@ export class FfmpegEngine {
     ];
     const total = opts.durationSec ?? 0;
     let buffered = '';
-    await this.exec(full, {
+    const { stderr } = await this.exec(full, {
       signal: opts.signal,
       onStdout: (chunk) => {
         if (!opts.onProgress || total <= 0) return;
@@ -125,6 +139,7 @@ export class FfmpegEngine {
         }
       },
     });
+    return stderr;
   }
 
   private exec(

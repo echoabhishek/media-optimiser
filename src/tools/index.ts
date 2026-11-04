@@ -1,5 +1,8 @@
 import type { ToolManifest } from '../shared/types';
 import type { ToolDefinition } from './types';
+import { cleanupAudio } from './audio/cleanup';
+import { convertAudio } from './audio/convert';
+import { normaliseLoudness } from './audio/normalise';
 import { movToMp4 } from './video/mov-to-mp4';
 import { toGif } from './video/to-gif';
 
@@ -10,15 +13,22 @@ import { toGif } from './video/to-gif';
  * The sidebar, options form, file picker filters and job runner all
  * pick it up automatically.
  */
-export const tools: ToolDefinition[] = [movToMp4, toGif];
+export const tools: ToolDefinition[] = [
+  movToMp4,
+  toGif,
+  convertAudio,
+  normaliseLoudness,
+  cleanupAudio,
+];
 
 export function getTool(id: string): ToolDefinition | undefined {
   return tools.find((t) => t.id === id);
 }
 
-/** Strips `run` so the manifest can cross IPC. */
+/** Strips functions so the manifest can cross IPC. */
 export function toManifest({
   run: _run,
+  outputExtensionFor: _ext,
   ...manifest
 }: ToolDefinition): ToolManifest {
   return manifest;

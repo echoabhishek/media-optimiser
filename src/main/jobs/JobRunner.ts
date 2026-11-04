@@ -106,17 +106,20 @@ export class JobRunner extends EventEmitter<{ update: [JobState] }> {
 
   private async execute(job: Job): Promise<void> {
     const tool = getTool(job.request.toolId)!;
+    const options = resolveOptions(tool.options, job.request.options);
+    const ext =
+      tool.outputExtensionFor?.(job.request.inputPath, options) ??
+      tool.outputExtension;
     const outputPath = await uniqueOutputPath(
       job.request.inputPath,
-      tool.outputExtension,
+      ext,
       job.request.outputDir,
     );
     // Encode to a temp name, rename when complete: no half-written files.
-    const tempPath = `${outputPath}.part.${tool.outputExtension}`;
+    const tempPath = `${outputPath}.part.${ext}`;
     job.tempPath = tempPath;
     this.update(job, { status: 'running', outputPath, startedAt: Date.now() });
 
-    const options = resolveOptions(tool.options, job.request.options);
     log(
       'info',
       `start ${tool.id} ${job.request.inputPath} ${JSON.stringify(options)}${job.request.trim ? ` trim=${JSON.stringify(job.request.trim)}` : ''}`,

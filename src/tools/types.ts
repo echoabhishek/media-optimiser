@@ -26,4 +26,6 @@ export interface ToolResult {
 
 export interface ToolDefinition extends ToolManifest {
   run(ctx: ToolRunContext): Promise<ToolResult | void>;
+  /** When the output format depends on the input or options. */
+  outputExtensionFor?(inputPath: string, options: OptionValues): string;
 }

@@ -3,7 +3,7 @@
 A cross-platform desktop app (macOS, Windows, Linux) for converting and optimising media.
 Built with Electron Forge + Vite + React + TypeScript, with ffmpeg bundled. Users don't need to install anything.
 
-**Tools so far:** Video › MOV to MP4. Audio and image tools are planned.
+**Tools:** Video › MOV to MP4, Video to GIF · Audio › Convert audio (incl. extracting from video), Normalise loudness (EBU R128), Clean up recording. Image tools are planned.
 
 ## Develop
 

@@ -25,7 +25,7 @@ export function TrimEditor({ path, value, onChange, onClose }: Props) {
   }, [path]);
 
   if (duration == null) {
-    return <div className="trim muted">Reading video…</div>;
+    return <div className="trim muted">Loading…</div>;
   }
   const endValue = end ?? duration;
 
