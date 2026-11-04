@@ -10,7 +10,7 @@ Built with Electron Forge + Vite + React + TypeScript, with ffmpeg bundled. User
 ```sh
 npm install      # also downloads ffmpeg for your OS (ffmpeg-static)
 npm start        # run the app with hot reload
-npm run typecheck && npm run lint
+npm run typecheck && npm test
 npm run make     # build installers for the current OS into out/make
 ```
 

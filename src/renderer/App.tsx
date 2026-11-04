@@ -5,6 +5,7 @@ import { FileList } from './components/FileList';
 import { OptionsForm } from './components/OptionsForm';
 import { Sidebar } from './components/Sidebar';
 import { basename, extension, formatBytes } from '../shared/format';
+import { resolveOptions } from '../shared/options';
 
 const api = window.mediaApi;
 
@@ -56,9 +57,7 @@ export function App() {
     );
   }
 
-  const options: OptionValues = Object.fromEntries(
-    tool.options.map((f) => [f.key, optionsByTool[tool.id]?.[f.key] ?? f.default]),
-  );
+  const options = resolveOptions(tool.options, optionsByTool[tool.id]);
 
   const isDefault =
     outputDir === null && tool.options.every((f) => options[f.key] === f.default);

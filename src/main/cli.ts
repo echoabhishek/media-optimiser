@@ -116,7 +116,7 @@ function exampleValue(f: OptionField): string {
 }
 
 /** Parses `files... --key value --key=value --flag --no-flag --out dir`. */
-function parseToolArgs(tool: ToolDefinition, args: string[]) {
+export function parseToolArgs(tool: ToolDefinition, args: string[]) {
   const files: string[] = [];
   const options: OptionValues = {};
   let outDir: string | undefined;

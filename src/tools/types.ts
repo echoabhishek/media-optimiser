@@ -19,13 +19,3 @@ export interface ToolRunContext {
 export interface ToolDefinition extends ToolManifest {
   run(ctx: ToolRunContext): Promise<void>;
 }
-
-/** Fills in defaults for any option the caller didn't send. */
-export function withDefaults(
-  tool: ToolManifest,
-  options: OptionValues,
-): OptionValues {
-  const out: OptionValues = {};
-  for (const f of tool.options) out[f.key] = options[f.key] ?? f.default;
-  return out;
-}

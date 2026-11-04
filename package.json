@@ -18,7 +18,8 @@
     "release": "electron-forge release",
     "lint": "oxlint && oxfmt --check",
     "lint:fix": "oxlint --fix && oxfmt --write",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "devDependencies": {
     "@electron-forge/cli": "^8.0.1",
@@ -38,7 +39,8 @@
     "oxfmt": "^0.41.0",
     "oxlint": "^1.91.0",
     "typescript": "^6.0.3",
-    "vite": "^8.3.5"
+    "vite": "^8.3.5",
+    "vitest": "^5.1.0"
   },
   "dependencies": {
     "electron-squirrel-startup": "^1.0.1",

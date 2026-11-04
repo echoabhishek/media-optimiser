@@ -4,7 +4,7 @@ import { rmSync } from 'node:fs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { getTool } from '../../tools';
-import { withDefaults } from '../../tools/types';
+import { resolveOptions } from '../../shared/options';
 import type { JobRequest, JobState } from '../../shared/types';
 import { AbortError } from '../engines/ffmpeg';
 import { getEngines } from '../engines';
@@ -115,7 +115,7 @@ export class JobRunner extends EventEmitter<{ update: [JobState] }> {
       await tool.run({
         inputPath: job.request.inputPath,
         outputPath: tempPath,
-        options: withDefaults(tool, job.request.options),
+        options: resolveOptions(tool.options, job.request.options),
         engines: getEngines(),
         signal: job.abort.signal,
         onProgress: (p) => {
@@ -153,7 +153,7 @@ export class JobRunner extends EventEmitter<{ update: [JobState] }> {
 }
 
 /** `clip.mov` → `clip.mp4`; never overwrites (incl. the input itself). */
-async function uniqueOutputPath(
+export async function uniqueOutputPath(
   inputPath: string,
   ext: string,
   outputDir?: string,
