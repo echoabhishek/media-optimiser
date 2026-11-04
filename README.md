@@ -1,6 +1,8 @@
+<img src="assets/icon.png" width="96" alt="">
+
 # Media Optimiser
 
-A cross-platform desktop app (macOS, Windows, Linux) for converting and optimising media.
+**Smaller files. Same quality.** A cross-platform desktop app (macOS, Windows, Linux) for converting and optimising media.
 Built with Electron Forge + Vite + React + TypeScript, with ffmpeg bundled. Users don't need to install anything.
 
 **Tools:** Video › MOV to MP4, Video to GIF · Audio › Convert audio (incl. extracting from video), Normalise loudness (EBU R128), Clean up recording · Image › Compress images (JPEG, WebP, AVIF, PNG; HEIC input on macOS).

@@ -73,8 +73,18 @@ function print(text: string): number {
   return 0;
 }
 
+/** Name line with the logo's three colours as blocks (plain when piped). */
+function header(): string {
+  const colour = process.stdout.isTTY && !process.env.NO_COLOR;
+  const block = (code: number) => (colour ? `\x1b[38;5;${code}m■\x1b[0m` : '');
+  const mark = colour ? `${block(203)}${block(99)}${block(71)}  ` : '';
+  return `${mark}Media Optimiser ${app.getVersion()} · smaller files, same quality`;
+}
+
 function usageText(): string {
-  return `Usage: ${BIN} <tool> <files...> [options]
+  return `${header()}
+
+Usage: ${BIN} <tool> <files...> [options]
 
 Commands:
   list              List available tools

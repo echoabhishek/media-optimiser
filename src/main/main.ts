@@ -68,6 +68,13 @@ if (cliArgs) {
   registerPreviewScheme();
   app.whenReady().then(() => {
     handlePreviewScheme();
+    app.setAboutPanelOptions({
+      applicationName: 'Media Optimiser',
+      applicationVersion: app.getVersion(),
+      credits:
+        'Smaller files. Same quality.\nVideo and audio by FFmpeg, images by libvips.',
+      iconPath: iconPath(), // Windows/Linux; macOS uses the bundle icon
+    });
     const settings = new SettingsStore();
     // Drives prefers-color-scheme in the page and the native window chrome.
     nativeTheme.themeSource = settings.get().theme;
@@ -111,6 +118,7 @@ function notifyWhenBatchFinishes(): void {
         body: done.length
           ? `${formatBytes(before)} → ${formatBytes(after)}`
           : 'See the app for details.',
+        icon: iconPath(),
       });
       n.on('click', () => win.show());
       n.show();
