@@ -18,6 +18,13 @@ Installers per OS: `.zip` (macOS), Squirrel `Setup.exe` (Windows), `.deb` / `.rp
 `ffmpeg-static` downloads the ffmpeg binary for the OS you build on, so **build each OS on that OS**.
 `.github/workflows/build.yml` does this on GitHub Actions (run it manually, or push a `v*` tag).
 
+## Workflow features
+
+- **Parallel jobs per media type:** video runs one at a time (encoders use every core), audio two, images several. Output names are reserved up front so parallel jobs never overwrite each other.
+- **Drag out:** drag a finished file from the list straight into Slack, an email or Finder.
+- **Move originals to the Trash** (opt-in, in Settings; CLI `--trash-originals`): only after the output was written successfully.
+- **Notification** when a batch finishes while the window is in the background.
+
 ## Releasing
 
 - **Builds:** `.github/workflows/build.yml` makes installers for macOS (Apple Silicon and Intel), Windows and Linux. Run it manually or push a `v*` tag.

@@ -114,10 +114,10 @@ function toolHelpText(tool: ToolDefinition): string {
       ['--end <time>', 'Stop at this time (seconds or m:ss)'],
     );
   }
-  rows.push([
-    '--out <dir>',
-    'Output folder (default: next to each input file)',
-  ]);
+  rows.push(
+    ['--out <dir>', 'Output folder (default: next to each input file)'],
+    ['--trash-originals', 'Move each original to the Trash once converted'],
+  );
   const advanced = tool.options.filter((f) => f.advanced).map(toRow);
   const width =
     Math.max(...[...rows, ...advanced].map(([flag]) => flag.length)) + 2;
@@ -170,6 +170,7 @@ export function parseToolArgs(tool: ToolDefinition, args: string[]) {
   const options: OptionValues = {};
   let outDir: string | undefined;
   let preset: ToolPreset | undefined;
+  let trashOriginals = false;
   let start: number | undefined;
   let end: number | undefined;
 
@@ -194,6 +195,10 @@ export function parseToolArgs(tool: ToolDefinition, args: string[]) {
           `Unknown preset "${id}". Use one of: ${(tool.presets ?? []).map((p) => p.id).join(', ')}`,
         );
       }
+      continue;
+    }
+    if (rawKey === 'trash-originals') {
+      trashOriginals = true;
       continue;
     }
     if (rawKey === 'out') {
@@ -265,12 +270,19 @@ export function parseToolArgs(tool: ToolDefinition, args: string[]) {
     options: { ...preset?.values, ...options },
     outDir,
     trim,
+    trashOriginals,
   };
 }
 
 async function convert(
   tool: ToolDefinition,
-  { files, options, outDir, trim }: ReturnType<typeof parseToolArgs>,
+  {
+    files,
+    options,
+    outDir,
+    trim,
+    trashOriginals,
+  }: ReturnType<typeof parseToolArgs>,
 ): Promise<number> {
   const runner = new JobRunner();
   const tty = process.stdout.isTTY;
@@ -322,6 +334,7 @@ async function convert(
       options,
       outputDir: outDir,
       trim,
+      trashOriginal: trashOriginals,
     })),
   );
   await finished;

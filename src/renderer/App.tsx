@@ -24,6 +24,7 @@ export function App() {
   const [trims, setTrims] = useState<Record<string, TrimRange>>({});
   const [notice, setNotice] = useState<string | null>(null);
   const [outputDir, setOutputDir] = useState<string | null>(null);
+  const [trashOriginals, setTrashOriginals] = useState(false);
   const [optionsByTool, setOptionsByTool] = useState<
     Record<string, OptionValues>
   >({});
@@ -37,6 +38,7 @@ export function App() {
           : (list[0]?.id ?? null),
       );
       setOutputDir(s.outputDir);
+      setTrashOriginals(s.trashOriginals);
       setOptionsByTool(s.toolOptions);
       setLoaded(true);
     });
@@ -56,8 +58,9 @@ export function App() {
       selectedToolId: toolId,
       outputDir,
       toolOptions: optionsByTool,
+      trashOriginals,
     });
-  }, [loaded, toolId, outputDir, optionsByTool]);
+  }, [loaded, toolId, outputDir, optionsByTool, trashOriginals]);
 
   const tool = tools.find((t) => t.id === toolId);
   const toolJobs = useMemo(
@@ -78,6 +81,7 @@ export function App() {
 
   const isDefault =
     outputDir === null &&
+    !trashOriginals &&
     tool.options.every((f) => options[f.key] === f.default);
   const basicFields = tool.options.filter((f) => !f.advanced);
   const advancedFields = tool.options.filter((f) => f.advanced);
@@ -122,6 +126,7 @@ export function App() {
           inputPath,
           options,
           outputDir: outputDir ?? undefined,
+          trashOriginal: trashOriginals,
           trim: tool.supportsTrim ? trims[inputPath] : undefined,
         })),
       );
@@ -170,6 +175,7 @@ export function App() {
               onClick={() => {
                 setOptionsByTool(({ [tool.id]: _removed, ...rest }) => rest);
                 setOutputDir(null);
+                setTrashOriginals(false);
               }}
             >
               Restore defaults
@@ -227,6 +233,16 @@ export function App() {
               </button>
             )}
           </div>
+          <label className="trash-row">
+            <input
+              type="checkbox"
+              className="toggle"
+              checked={trashOriginals}
+              onChange={(e) => setTrashOriginals(e.target.checked)}
+            />
+            Move originals to the Trash after converting
+            {trashOriginals && <span className="changed"> · changed</span>}
+          </label>
         </section>
 
         <DropZone

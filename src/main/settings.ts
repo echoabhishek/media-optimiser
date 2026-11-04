@@ -7,6 +7,7 @@ const DEFAULTS: AppSettings = {
   selectedToolId: null,
   outputDir: null,
   toolOptions: {},
+  trashOriginals: false,
 };
 
 /**

@@ -1,4 +1,4 @@
-import { app } from 'electron';
+import { app, shell } from 'electron';
 import { randomUUID } from 'node:crypto';
 import os from 'node:os';
 import { EventEmitter } from 'node:events';
@@ -156,11 +156,16 @@ export class JobRunner extends EventEmitter<{ update: [JobState] }> {
         'info',
         `done ${outputPath} ${job.state.inputBytes} -> ${size} bytes`,
       );
+      const originalTrashed =
+        job.request.trashOriginal && size > 0
+          ? await trash(job.request.inputPath)
+          : undefined;
       this.update(job, {
         status: 'done',
         progress: 1,
         outputBytes: size,
         quality: result?.quality,
+        originalTrashed,
         finishedAt: Date.now(),
       });
     } catch (err) {
@@ -200,6 +205,18 @@ export class JobRunner extends EventEmitter<{ update: [JobState] }> {
   private update(job: Job, patch: Partial<JobState>): void {
     job.state = { ...job.state, ...patch };
     this.emit('update', job.state);
+  }
+}
+
+/** Moves a file to the OS Trash; a failure is logged, never fatal. */
+async function trash(file: string): Promise<boolean> {
+  try {
+    await shell.trashItem(file);
+    log('info', `trashed original ${file}`);
+    return true;
+  } catch (err) {
+    log('error', `could not trash ${file}: ${(err as Error).message}`);
+    return false;
   }
 }
 

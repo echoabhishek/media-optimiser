@@ -75,6 +75,7 @@ const config: ForgeConfig = {
     extraResource: [
       `node_modules/ffmpeg-static/ffmpeg${process.platform === 'win32' ? '.exe' : ''}`,
       'node_modules/ffmpeg-static/ffmpeg.LICENSE',
+      'assets/icon.png',
     ],
   },
   rebuildConfig: {},

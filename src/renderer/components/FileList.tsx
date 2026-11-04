@@ -32,7 +32,21 @@ export function FileList({
   return (
     <ul className="files">
       {jobs.map((job) => (
-        <li key={job.id} className={`file ${job.status}`}>
+        <li
+          key={job.id}
+          className={`file ${job.status}`}
+          draggable={job.status === 'done'}
+          title={
+            job.status === 'done'
+              ? 'Drag into another app, e.g. Slack or an email'
+              : undefined
+          }
+          onDragStart={(e) => {
+            if (job.status !== 'done' || !job.outputPath) return;
+            e.preventDefault();
+            api.startDrag(job.outputPath);
+          }}
+        >
           <div className="file-main">
             <span className="file-name" title={job.inputPath}>
               {basename(job.inputPath)}
@@ -150,6 +164,9 @@ function JobDetail({ job }: { job: JobState }) {
               {' '}
               · {formatMatch(job.quality)}
             </span>
+          )}
+          {job.originalTrashed && (
+            <span className="muted"> · original in Trash</span>
           )}
           {job.startedAt && job.finishedAt && (
             <span className="muted">

@@ -14,6 +14,8 @@ vi.mock('electron', () => ({
     getVersion: () => '0.0.0-test',
     getPath: () => path.join(os.tmpdir(), 'mo-test-logs'),
   },
+  // Stand-in for the OS Trash: just delete the file.
+  shell: { trashItem: async (p: string) => fs.rmSync(p) },
 }));
 
 const ffmpegBin = path.join(
@@ -148,5 +150,50 @@ describe('JobRunner parallel naming', () => {
     ]);
     expect(a).not.toBe(b);
     expect(reserved).toEqual(new Set([a, b]));
+  });
+});
+
+describe('JobRunner trash originals (real ffmpeg)', () => {
+  it('moves the original to the Trash only after success', async () => {
+    const input = makeClip('trash-me.mov', 1);
+    const runner = new JobRunner();
+    const job = await new Promise<JobState>((resolve) => {
+      runner.on('update', (j) => {
+        if (j.status === 'done' || j.status === 'error') resolve(j);
+      });
+      void runner.enqueue([
+        {
+          toolId: 'video.mov-to-mp4',
+          inputPath: input,
+          options: { speed: 'fast' },
+          trashOriginal: true,
+        },
+      ]);
+    });
+    expect(job.status).toBe('done');
+    expect(job.originalTrashed).toBe(true);
+    expect(fs.existsSync(input)).toBe(false);
+    expect(fs.existsSync(job.outputPath!)).toBe(true);
+  });
+
+  it('keeps the original when the conversion fails', async () => {
+    const input = path.join(dir, 'broken-keep.mov');
+    fs.writeFileSync(input, 'not a video');
+    const runner = new JobRunner();
+    const job = await new Promise<JobState>((resolve) => {
+      runner.on('update', (j) => {
+        if (j.status === 'done' || j.status === 'error') resolve(j);
+      });
+      void runner.enqueue([
+        {
+          toolId: 'video.mov-to-mp4',
+          inputPath: input,
+          options: {},
+          trashOriginal: true,
+        },
+      ]);
+    });
+    expect(job.status).toBe('error');
+    expect(fs.existsSync(input)).toBe(true);
   });
 });

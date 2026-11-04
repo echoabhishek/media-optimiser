@@ -30,7 +30,9 @@ describe('parseToolArgs', () => {
       files: [mov],
       options: { codec: 'h265', quality: 'small' },
       outDir: dir,
+      trashOriginals: false,
     });
+    expect(parse(mov, '--trash-originals').trashOriginals).toBe(true);
   });
 
   it('uses kebab-case flags for camelCase options', () => {

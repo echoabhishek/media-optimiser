@@ -16,6 +16,7 @@ export const IPC = {
   openPath: 'shell:open',
   copyText: 'clipboard:write',
   probe: 'media:probe',
+  startDrag: 'drag:start',
 } as const;
 
 /** The API the preload script exposes on `window.mediaApi`. */
@@ -37,6 +38,8 @@ export interface MediaApi {
   revealPath(path: string): Promise<void>;
   openPath(path: string): Promise<void>;
   copyText(text: string): Promise<void>;
+  /** Starts an OS drag of a finished output file (e.g. into Slack). */
+  startDrag(path: string): void;
   /** Duration in seconds, or null if unknown. */
   getDuration(path: string): Promise<number | null>;
 }

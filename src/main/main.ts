@@ -1,9 +1,12 @@
-import { app, BrowserWindow, shell } from 'electron';
+import { app, BrowserWindow, Notification, shell } from 'electron';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
 import { getCliArgs, runCli } from './cli';
 import { registerIpc } from './ipc';
 import { JobRunner } from './jobs/JobRunner';
+import { formatBytes } from '../shared/format';
+import type { JobState } from '../shared/types';
+import { iconPath } from './icon';
 import { handlePreviewScheme, registerPreviewScheme } from './preview';
 import { SettingsStore } from './settings';
 
@@ -20,6 +23,7 @@ const createWindow = () => {
     minHeight: 520,
     title: 'Media Optimiser',
     backgroundColor: '#111214',
+    icon: iconPath(), // Windows/Linux taskbar; macOS uses the bundle icon
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,
@@ -61,6 +65,7 @@ if (cliArgs) {
   app.whenReady().then(() => {
     handlePreviewScheme();
     registerIpc(runner, new SettingsStore());
+    notifyWhenBatchFinishes();
     createWindow();
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow();
@@ -74,3 +79,35 @@ app.on('will-quit', () => runner.shutdown());
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
 });
+
+/** Notifies when the queue empties, if the window isn't in front. */
+function notifyWhenBatchFinishes(): void {
+  let finished: JobState[] = [];
+  runner.on('update', (job) => {
+    if (job.status !== 'done' && job.status !== 'error') return;
+    finished.push(job);
+    const busy = runner
+      .list()
+      .some((j) => j.status === 'queued' || j.status === 'running');
+    if (busy) return;
+
+    const win = BrowserWindow.getAllWindows()[0];
+    if (win && !win.isFocused() && Notification.isSupported()) {
+      const done = finished.filter((j) => j.status === 'done');
+      const failed = finished.length - done.length;
+      const before = done.reduce((s, j) => s + j.inputBytes, 0);
+      const after = done.reduce((s, j) => s + (j.outputBytes ?? 0), 0);
+      const n = new Notification({
+        title: failed
+          ? `${done.length} done, ${failed} failed`
+          : `${done.length} file${done.length === 1 ? '' : 's'} ready`,
+        body: done.length
+          ? `${formatBytes(before)} → ${formatBytes(after)}`
+          : 'See the app for details.',
+      });
+      n.on('click', () => win.show());
+      n.show();
+    }
+    finished = [];
+  });
+}

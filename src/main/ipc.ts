@@ -1,4 +1,12 @@
-import { BrowserWindow, clipboard, dialog, ipcMain, shell } from 'electron';
+import {
+  BrowserWindow,
+  clipboard,
+  dialog,
+  ipcMain,
+  nativeImage,
+  shell,
+} from 'electron';
+import { iconPath } from './icon';
 import { IPC } from '../shared/ipc';
 import type { AppSettings, JobRequest } from '../shared/types';
 import { toManifest, tools } from '../tools';
@@ -41,6 +49,15 @@ export function registerIpc(runner: JobRunner, settings: SettingsStore): void {
     IPC.probe,
     async (_e, p: string) => (await getEngines().ffmpeg.probe(p)).durationSec,
   );
+  let dragIcon: Electron.NativeImage | undefined;
+  ipcMain.on(IPC.startDrag, (e, p: string) => {
+    // Only files this app produced can be dragged out.
+    if (!runner.list().some((j) => j.status === 'done' && j.outputPath === p)) {
+      return;
+    }
+    dragIcon ??= nativeImage.createFromPath(iconPath()).resize({ width: 64 });
+    e.sender.startDrag({ file: p, icon: dragIcon });
+  });
   ipcMain.handle(IPC.copyText, (_e, text: string) => clipboard.writeText(text));
   ipcMain.handle(IPC.openPath, async (_e, p: string) => {
     await shell.openPath(p);

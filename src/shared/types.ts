@@ -87,6 +87,8 @@ export interface AppSettings {
   outputDir: string | null;
   /** Only options the user changed; missing keys mean "use the default". */
   toolOptions: Record<string, OptionValues>;
+  /** Move each original to the Trash after a successful conversion. */
+  trashOriginals: boolean;
 }
 
 export type JobStatus = 'queued' | 'running' | 'done' | 'error' | 'cancelled';
@@ -98,6 +100,8 @@ export interface JobRequest {
   /** Folder for the output; defaults to the input file's folder. */
   outputDir?: string;
   trim?: TrimRange;
+  /** Move the input to the Trash once the output is written. */
+  trashOriginal?: boolean;
 }
 
 export interface JobState {
@@ -112,6 +116,8 @@ export interface JobState {
   outputBytes?: number;
   /** Visual similarity to the original, 0..1 (SSIM), when measured. */
   quality?: number;
+  /** The input was moved to the Trash after converting. */
+  originalTrashed?: boolean;
   error?: string;
   /** Full report for "Copy error details" (versions, options, ffmpeg output). */
   errorDetails?: string;
