@@ -24,6 +24,8 @@ export const IPC = {
   probe: 'media:probe',
   startDrag: 'drag:start',
   setWatch: 'watch:set',
+  openFiles: 'files:open',
+  takeOpenedFiles: 'files:take-opened',
 } as const;
 
 /** The API the preload script exposes on `window.mediaApi`. */
@@ -45,6 +47,10 @@ export interface MediaApi {
   revealPath(path: string): Promise<void>;
   openPath(path: string): Promise<void>;
   copyText(text: string): Promise<void>;
+  /** Files opened with the app (Open With, Dock, command line). */
+  onOpenFiles(listener: (paths: string[]) => void): () => void;
+  /** Files opened before the UI was ready to receive them. */
+  takeOpenedFiles(): Promise<string[]>;
   /** Starts or (with null) stops auto-converting new files in a folder. */
   setWatch(target: WatchTarget | null): Promise<void>;
   /** Starts an OS drag of a finished output file (e.g. into Slack). */

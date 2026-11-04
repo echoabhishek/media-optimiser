@@ -7,6 +7,7 @@ import { JobRunner } from './jobs/JobRunner';
 import { formatBytes } from '../shared/format';
 import type { JobState } from '../shared/types';
 import { iconPath } from './icon';
+import { setupOpenFiles } from './open-files';
 import { handlePreviewScheme, registerPreviewScheme } from './preview';
 import { SettingsStore } from './settings';
 
@@ -60,6 +61,9 @@ if (cliArgs) {
       return 1;
     })
     .then((code) => app.exit(code));
+} else if (!setupOpenFiles()) {
+  // Another window is already open; it receives our files and focuses.
+  app.quit();
 } else {
   registerPreviewScheme();
   app.whenReady().then(() => {

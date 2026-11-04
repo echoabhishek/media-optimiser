@@ -24,6 +24,7 @@ Installers per OS: `.zip` (macOS), Squirrel `Setup.exe` (Windows), `.deb` / `.rp
 - **Drag out:** drag a finished file from the list straight into Slack, an email or Finder.
 - **Move originals to the Trash** (opt-in, in Settings; CLI `--trash-originals`): only after the output was written successfully.
 - **Watch a folder** (Settings › Auto-convert): new files in the folder (e.g. screen recordings on the Desktop) are converted with that tool's saved settings while the app is open. Files already there, hidden/partial files and the app's own outputs are ignored; a file is picked up once its size stops changing. A banner shows while watching.
+- **Open With / Dock / command line:** the app is registered (macOS: as an alternate handler for movies, audio and images; Linux: via MIME types) so files can be opened with it. It picks the current tool if suitable, else the first tool for the file's kind. A second launch hands its files to the open window. On Windows, use "Open with → Choose another app".
 - **Notification** when a batch finishes while the window is in the background.
 
 ## Releasing

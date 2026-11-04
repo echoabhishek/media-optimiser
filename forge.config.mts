@@ -41,6 +41,25 @@ function nativePackages(platform: string, arch: string): string[] {
   return ['sharp', '@img/colour', 'detect-libc', 'semver', ...binaries];
 }
 
+/** Linux "Open With" registration. */
+const mimeType = [
+  'video/quicktime',
+  'video/mp4',
+  'video/x-matroska',
+  'video/webm',
+  'audio/mpeg',
+  'audio/mp4',
+  'audio/x-wav',
+  'audio/flac',
+  'audio/ogg',
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/avif',
+  'image/tiff',
+  'image/heic',
+];
+
 const config: ForgeConfig = {
   hooks: {
     packageAfterCopy: async (_config, buildPath, _electron, platform, arch) => {
@@ -65,6 +84,17 @@ const config: ForgeConfig = {
     asar: { unpack: '**/node_modules/{sharp,@img}/**' },
     name: 'Media Optimiser',
     executableName: 'media-optimiser',
+    // Appear in Finder's "Open With" for media without becoming the default.
+    extendInfo: {
+      CFBundleDocumentTypes: [
+        {
+          CFBundleTypeName: 'Media',
+          CFBundleTypeRole: 'Viewer',
+          LSHandlerRank: 'Alternate',
+          LSItemContentTypes: ['public.movie', 'public.audio', 'public.image'],
+        },
+      ],
+    },
     appBundleId: 'com.mediaoptimiser.app',
     // Extension is picked per platform: .icns (macOS), .ico (Windows).
     icon: 'assets/icon',
@@ -87,10 +117,10 @@ const config: ForgeConfig = {
     }),
     new MakerZIP({}, ['darwin']),
     new MakerRpm({
-      options: { bin: 'media-optimiser', icon: 'assets/icon.png' },
+      options: { bin: 'media-optimiser', icon: 'assets/icon.png', mimeType },
     }),
     new MakerDeb({
-      options: { bin: 'media-optimiser', icon: 'assets/icon.png' },
+      options: { bin: 'media-optimiser', icon: 'assets/icon.png', mimeType },
     }),
   ],
   plugins: [

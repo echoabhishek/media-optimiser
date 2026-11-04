@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type {
   WatchTarget,
   JobState,
@@ -70,6 +70,53 @@ export function App() {
     () => [...jobs.values()].filter((j) => j.toolId === toolId).reverse(),
     [jobs, toolId],
   );
+
+  // Files opened with the app (Open With, Dock, command line): prefer the
+  // current tool, else the first tool of the files' kind.
+  const openFiles = useRef<(paths: string[]) => void>(() => {});
+  openFiles.current = (paths) => {
+    const accepted = (t: ToolManifest) =>
+      paths.filter((p) => t.inputExtensions.includes(extension(p)));
+    // A file's natural kind is that of the first tool accepting it, so a
+    // .mov goes to a video tool even though audio tools can extract from it.
+    const natural = tools.find((t) =>
+      t.inputExtensions.includes(extension(paths[0])),
+    )?.kind;
+    const fits = (t: ToolManifest) =>
+      accepted(t).length > 0 && t.kind === natural;
+    const target =
+      tool && fits(tool)
+        ? tool
+        : (tools.find(fits) ?? tools.find((t) => accepted(t).length));
+    if (!target) {
+      setNotice('None of the tools can open these files.');
+      return;
+    }
+    const files = accepted(target);
+    if (target.id === toolId) {
+      setPending((prev) => [
+        ...prev,
+        ...files.filter((p) => !prev.includes(p)),
+      ]);
+    } else {
+      setToolId(target.id);
+      setPending(files);
+      setTrims({});
+    }
+    const skipped = paths.length - files.length;
+    setNotice(
+      skipped
+        ? `Skipped ${skipped} file${skipped > 1 ? 's' : ''} that ${target.name} can't open.`
+        : null,
+    );
+  };
+  useEffect(() => {
+    if (!loaded) return;
+    void api
+      .takeOpenedFiles()
+      .then((files) => files.length && openFiles.current(files));
+    return api.onOpenFiles((files) => openFiles.current(files));
+  }, [loaded]);
 
   if (!tool) {
     return (

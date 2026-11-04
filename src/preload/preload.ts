@@ -26,6 +26,13 @@ const api: MediaApi = {
   getDuration: (p) => ipcRenderer.invoke(IPC.probe, p),
   startDrag: (p) => ipcRenderer.send(IPC.startDrag, p),
   setWatch: (target) => ipcRenderer.invoke(IPC.setWatch, target),
+  onOpenFiles: (listener) => {
+    const handler = (_e: Electron.IpcRendererEvent, paths: string[]) =>
+      listener(paths);
+    ipcRenderer.on(IPC.openFiles, handler);
+    return () => ipcRenderer.removeListener(IPC.openFiles, handler);
+  },
+  takeOpenedFiles: () => ipcRenderer.invoke(IPC.takeOpenedFiles),
 };
 
 contextBridge.exposeInMainWorld('mediaApi', api);
