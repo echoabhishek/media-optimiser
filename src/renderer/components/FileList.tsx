@@ -219,9 +219,9 @@ function StatusTile({ job }: { job: JobState }) {
 function SavedBadge({ job }: { job: JobState }) {
   const saved = 1 - (job.outputBytes ?? 0) / job.inputBytes;
   return saved >= 0 ? (
-    <span className="badge saved">{Math.round(saved * 100)}% smaller</span>
+    <span className="badge saved">{Math.floor(saved * 100)}% smaller</span>
   ) : (
-    <span className="badge grew">{Math.round(-saved * 100)}% larger</span>
+    <span className="badge grew">{Math.ceil(-saved * 100)}% larger</span>
   );
 }
 

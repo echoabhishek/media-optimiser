@@ -337,7 +337,7 @@ async function convert(
       if (tty) process.stdout.write('\r\x1b[K');
       if (job.status === 'done') {
         const out = job.outputBytes ?? 0;
-        const pct = Math.round((1 - out / job.inputBytes) * 100);
+        const pct = Math.floor((1 - out / job.inputBytes) * 100); // never shows 100%
         console.log(
           `✓ ${label}  ${formatBytes(job.inputBytes)} → ${formatBytes(out)} (${pct >= 0 ? `${pct}% smaller` : `${-pct}% larger`}${job.quality != null ? `, ${formatMatch(job.quality)}` : ''})\n  ${job.outputPath}`,
         );
