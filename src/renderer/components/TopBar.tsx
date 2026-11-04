@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import type { MediaKind, ToolManifest } from '../../shared/types';
+import { Logo } from './Logo';
 
 const KINDS: { kind: MediaKind; label: string }[] = [
   { kind: 'video', label: 'Video' },
@@ -17,6 +18,10 @@ interface Props {
 export function TopBar({ tools, kind, onSelectKind, end }: Props) {
   return (
     <header className="topbar">
+      <div className="brand">
+        <Logo size={22} />
+        Media Optimiser
+      </div>
       <nav className="kinds" aria-label="Media type">
         {KINDS.filter((k) => tools.some((t) => t.kind === k.kind)).map((k) => (
           <button

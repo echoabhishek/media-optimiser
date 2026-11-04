@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { MediaKind } from '../../shared/types';
+import { Logo } from './Logo';
 
 const NOUN: Record<MediaKind, string> = {
   video: 'videos',
@@ -42,9 +43,13 @@ export function DropZone({ kind, extensions, onFiles, compact }: Props) {
         if (paths.length) onFiles(paths);
       }}
     >
-      <svg viewBox="0 0 24 24" aria-hidden>
-        <path d="M12 16V4m0 0L7 9m5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" />
-      </svg>
+      {compact ? (
+        <svg viewBox="0 0 24 24" aria-hidden>
+          <path d="M12 16V4m0 0L7 9m5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" />
+        </svg>
+      ) : (
+        <Logo size={64} />
+      )}
       <strong>
         {compact ? `Add more ${NOUN[kind]}` : `Drop ${NOUN[kind]} here`}
       </strong>
