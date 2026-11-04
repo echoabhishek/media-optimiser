@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import type {
+  WatchTarget,
   JobState,
   OptionValues,
   ToolManifest,
@@ -25,6 +26,7 @@ export function App() {
   const [notice, setNotice] = useState<string | null>(null);
   const [outputDir, setOutputDir] = useState<string | null>(null);
   const [trashOriginals, setTrashOriginals] = useState(false);
+  const [watch, setWatchState] = useState<WatchTarget | null>(null);
   const [optionsByTool, setOptionsByTool] = useState<
     Record<string, OptionValues>
   >({});
@@ -39,6 +41,7 @@ export function App() {
       );
       setOutputDir(s.outputDir);
       setTrashOriginals(s.trashOriginals);
+      setWatchState(s.watch);
       setOptionsByTool(s.toolOptions);
       setLoaded(true);
     });
@@ -156,6 +159,27 @@ export function App() {
         }}
       />
       <main className="content">
+        {watch && (
+          <div className="watch-banner" role="status">
+            <span>
+              Watching <strong>{basename(watch.folder)}</strong>: new files are
+              converted with{' '}
+              <strong>
+                {tools.find((t) => t.id === watch.toolId)?.name ?? watch.toolId}
+              </strong>{' '}
+              using its saved settings.
+            </span>
+            <button
+              className="ghost"
+              onClick={async () => {
+                await api.setWatch(null);
+                setWatchState(null);
+              }}
+            >
+              Stop
+            </button>
+          </div>
+        )}
         <header className="tool-header">
           <h1>{tool.name}</h1>
           <p>{tool.description}</p>
@@ -243,6 +267,27 @@ export function App() {
             Move originals to the Trash after converting
             {trashOriginals && <span className="changed"> · changed</span>}
           </label>
+          <div className="output-row">
+            <span className="option-label">Auto-convert</span>
+            <span className="output-path">
+              {watch?.toolId === tool.id
+                ? `New files in ${basename(watch.folder)}`
+                : 'Off'}
+            </span>
+            <button
+              className="ghost"
+              title="Convert new files that appear in a folder, e.g. screen recordings on your Desktop"
+              onClick={async () => {
+                const folder = await api.pickFolder();
+                if (!folder) return;
+                const target = { toolId: tool.id, folder };
+                await api.setWatch(target);
+                setWatchState(target);
+              }}
+            >
+              Watch a folder…
+            </button>
+          </div>
         </section>
 
         <DropZone

@@ -8,6 +8,7 @@ const DEFAULTS: AppSettings = {
   outputDir: null,
   toolOptions: {},
   trashOriginals: false,
+  watch: null,
 };
 
 /**

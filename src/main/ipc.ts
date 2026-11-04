@@ -6,9 +6,14 @@ import {
   nativeImage,
   shell,
 } from 'electron';
+import fs from 'node:fs';
+import { extension } from '../shared/format';
+import { getTool } from '../tools';
 import { iconPath } from './icon';
+import { log } from './log';
+import { FolderWatcher } from './watch';
 import { IPC } from '../shared/ipc';
-import type { AppSettings, JobRequest } from '../shared/types';
+import type { AppSettings, JobRequest, WatchTarget } from '../shared/types';
 import { toManifest, tools } from '../tools';
 import { getEngines } from './engines';
 import { JobRunner } from './jobs/JobRunner';
@@ -49,6 +54,40 @@ export function registerIpc(runner: JobRunner, settings: SettingsStore): void {
     IPC.probe,
     async (_e, p: string) => (await getEngines().ffmpeg.probe(p)).durationSec,
   );
+  // Watch folder: new files are converted with the tool's saved settings.
+  const watcher = new FolderWatcher({
+    accepts: (file) => {
+      const tool = getTool(settings.get().watch?.toolId ?? '');
+      return !!tool && tool.inputExtensions.includes(extension(file));
+    },
+    isOwnOutput: (file) => runner.list().some((j) => j.outputPath === file),
+    onFile: (file) => {
+      const s = settings.get();
+      if (!s.watch) return;
+      log('info', `watch: new file ${file}`);
+      runner
+        .enqueue([
+          {
+            toolId: s.watch.toolId,
+            inputPath: file,
+            options: s.toolOptions[s.watch.toolId] ?? {},
+            outputDir: s.outputDir ?? undefined,
+            trashOriginal: s.trashOriginals,
+          },
+        ])
+        .catch((err: Error) => log('error', `watch: ${err.message}`));
+    },
+  });
+  const applyWatch = (target: WatchTarget | null) => {
+    if (target && fs.existsSync(target.folder)) watcher.start(target.folder);
+    else watcher.stop();
+  };
+  applyWatch(settings.get().watch);
+  ipcMain.handle(IPC.setWatch, (_e, target: WatchTarget | null) => {
+    settings.update({ watch: target });
+    applyWatch(target);
+  });
+
   let dragIcon: Electron.NativeImage | undefined;
   ipcMain.on(IPC.startDrag, (e, p: string) => {
     // Only files this app produced can be dragged out.

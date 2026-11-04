@@ -25,6 +25,7 @@ const api: MediaApi = {
   copyText: (text) => ipcRenderer.invoke(IPC.copyText, text),
   getDuration: (p) => ipcRenderer.invoke(IPC.probe, p),
   startDrag: (p) => ipcRenderer.send(IPC.startDrag, p),
+  setWatch: (target) => ipcRenderer.invoke(IPC.setWatch, target),
 };
 
 contextBridge.exposeInMainWorld('mediaApi', api);

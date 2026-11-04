@@ -80,6 +80,12 @@ export interface ToolManifest {
   supportsTrim?: boolean;
 }
 
+/** A folder whose new files are converted automatically with a tool. */
+export interface WatchTarget {
+  toolId: string;
+  folder: string;
+}
+
 /** Persisted user preferences (stored by the main process). */
 export interface AppSettings {
   selectedToolId: string | null;
@@ -89,6 +95,7 @@ export interface AppSettings {
   toolOptions: Record<string, OptionValues>;
   /** Move each original to the Trash after a successful conversion. */
   trashOriginals: boolean;
+  watch: WatchTarget | null;
 }
 
 export type JobStatus = 'queued' | 'running' | 'done' | 'error' | 'cancelled';

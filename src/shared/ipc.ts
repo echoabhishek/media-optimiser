@@ -1,4 +1,10 @@
-import type { AppSettings, JobRequest, JobState, ToolManifest } from './types';
+import type {
+  AppSettings,
+  JobRequest,
+  JobState,
+  ToolManifest,
+  WatchTarget,
+} from './types';
 
 /** IPC channel names, in one place so main and preload can't drift. */
 export const IPC = {
@@ -17,6 +23,7 @@ export const IPC = {
   copyText: 'clipboard:write',
   probe: 'media:probe',
   startDrag: 'drag:start',
+  setWatch: 'watch:set',
 } as const;
 
 /** The API the preload script exposes on `window.mediaApi`. */
@@ -38,6 +45,8 @@ export interface MediaApi {
   revealPath(path: string): Promise<void>;
   openPath(path: string): Promise<void>;
   copyText(text: string): Promise<void>;
+  /** Starts or (with null) stops auto-converting new files in a folder. */
+  setWatch(target: WatchTarget | null): Promise<void>;
   /** Starts an OS drag of a finished output file (e.g. into Slack). */
   startDrag(path: string): void;
   /** Duration in seconds, or null if unknown. */

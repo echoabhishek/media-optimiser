@@ -336,6 +336,22 @@ select {
   margin: 0;
 }
 
+.watch-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+  padding: 10px 14px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--accent-soft);
+  font-size: 13px;
+}
+
+.watch-banner span {
+  flex: 1;
+}
+
 .trash-row {
   display: flex;
   align-items: center;
