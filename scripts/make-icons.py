@@ -6,40 +6,21 @@ from PIL import Image, ImageDraw
 S = 4096  # draw large, downscale for anti-aliasing
 OUT = os.path.join(os.path.dirname(__file__), '..', 'assets')
 
-def lerp(a, b, t):
-    return tuple(round(a[i] + (b[i] - a[i]) * t) for i in range(3))
-
-# Diagonal indigo → cyan gradient (matches the in-app brand mark).
-start, end = (79, 70, 229), (34, 211, 238)
-grad = Image.new('RGB', (S, S))
-px = grad.load()
-for y in range(S):
-    for x in range(0, S, 4):
-        c = lerp(start, end, (x + y) / (2 * S))
-        for dx in range(4):
-            px[x + dx, y] = c
-
-# macOS-style tile: 80% of the canvas, rounded corners.
+# macOS-style tile: 80% of the canvas, rounded corners, white with a hairline.
 m, r = int(S * 0.1), int(S * 0.18)
-mask = Image.new('L', (S, S), 0)
-ImageDraw.Draw(mask).rounded_rectangle([m, m, S - m, S - m], r, fill=255)
 icon = Image.new('RGBA', (S, S), (0, 0, 0, 0))
-icon.paste(grad, (0, 0), mask)
-
 d = ImageDraw.Draw(icon)
-white = (255, 255, 255, 255)
-c = S / 2
-# Play triangle.
-t = S * 0.17
-d.polygon([(c - t * 0.75, c - t), (c - t * 0.75, c + t), (c + t * 0.95, c)], fill=white)
-# Inward chevrons either side ("squeeze" = optimise).
-w, h, gap, lw = S * 0.07, S * 0.12, S * 0.30, int(S * 0.035)
-for side in (-1, 1):
-    x0 = c + side * gap
-    tip = x0 - side * w
-    d.line([(x0, c - h), (tip, c), (x0, c + h)], fill=white, width=lw, joint='curve')
-    for p in [(x0, c - h), (tip, c), (x0, c + h)]:
-        d.ellipse([p[0] - lw / 2, p[1] - lw / 2, p[0] + lw / 2, p[1] + lw / 2], fill=white)
+d.rounded_rectangle([m, m, S - m, S - m], r, fill=(255, 255, 255, 255),
+                    outline=(227, 231, 239, 255), width=int(S * 0.006))
+
+# Studio mark: one shape per media type (video, audio, image), laid out on
+# an 88-unit grid inside the tile.
+k = (S - 2 * m) / 88
+def box(x0, y0, x1, y1):
+    return [m + x0 * k, m + y0 * k, m + x1 * k, m + y1 * k]
+d.rounded_rectangle(box(16, 16, 50, 50), 10 * k, fill=(229, 72, 77, 255))
+d.ellipse(box(44, 22, 72, 50), fill=(123, 97, 255, 255))
+d.rounded_rectangle(box(34, 50, 64, 72), 8 * k, fill=(43, 168, 74, 255))
 
 png = icon.resize((1024, 1024), Image.LANCZOS)
 png.save(os.path.join(OUT, 'icon.png'))

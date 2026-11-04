@@ -11,7 +11,7 @@ import { toGif } from './video/to-gif';
  * The tool registry. To add a tool:
  *   1. create `tools/<kind>/<name>.ts` exporting a ToolDefinition
  *   2. add it to this list
- * The sidebar, options form, file picker filters and job runner all
+ * The media tabs, options form, file picker filters and job runner all
  * pick it up automatically.
  */
 export const tools: ToolDefinition[] = [

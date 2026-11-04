@@ -75,7 +75,7 @@ src/
       ffmpeg.ts      Spawn ffmpeg, parse progress, probe, abort
       index.ts       Locates the bundled binary (dev vs packaged)
   preload/preload.ts Exposes `window.mediaApi` (contextIsolation + sandbox on)
-  renderer/          React UI. The sidebar and options form are generated from tool manifests
+  renderer/          React UI. The media tabs, tool tabs and options form are generated from tool manifests
 ```
 
 The renderer never touches the filesystem or ffmpeg. It sends a `JobRequest`
@@ -85,7 +85,7 @@ tool and sends back `JobState` updates.
 ## Adding a tool
 
 1. Create `src/tools/<kind>/<name>.ts` exporting a `ToolDefinition`:
-   - `kind`: `video` | `audio` | `image` (which sidebar group it appears in)
+   - `kind`: `video` | `audio` | `image` (which media tab it appears in)
    - `operation`: `convert` | `optimise` | `transform`
    - `inputExtensions`, `outputExtension`
    - `options`: `select` / `number` / `toggle` fields. The UI form is generated from these.

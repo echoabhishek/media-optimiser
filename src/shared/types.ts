@@ -3,7 +3,7 @@
  * Everything in this file must stay serialisable (it crosses IPC).
  */
 
-/** What kind of media a tool works on. Drives sidebar grouping. */
+/** What kind of media a tool works on. Drives the media tabs and accent colour. */
 export type MediaKind = 'video' | 'audio' | 'image';
 
 /** What a tool does. Used for badges and filtering. */
