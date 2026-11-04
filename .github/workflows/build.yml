@@ -7,6 +7,10 @@ on:
   push:
     tags: ['v*']
 
+# Needed to create a GitHub Release from a tag.
+permissions:
+  contents: write
+
 jobs:
   make:
     strategy:
@@ -44,3 +48,14 @@ jobs:
         with:
           name: media-optimiser-${{ matrix.os }}-${{ matrix.arch }}
           path: out/make/**
+      # A pushed v* tag also publishes the installers as a GitHub Release.
+      - if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            out/make/**/*.zip
+            out/make/**/*.exe
+            out/make/**/*.nupkg
+            out/make/**/RELEASES
+            out/make/**/*.deb
+            out/make/**/*.rpm

@@ -11,7 +11,7 @@ import path from 'node:path';
 
 const env = process.env;
 
-// Code signing switches on only when credentials are present (see README).
+// Code signing switches on only when credentials are present (see docs/development.md).
 const macSigning = env.APPLE_ID
   ? {
       osxSign: {},
@@ -67,7 +67,7 @@ const config: ForgeConfig = {
       // Windows bundles libvips inside this package; others add sharp-libvips-*.
       if (!packages.includes(`@img/sharp-${platform}-${arch}`)) {
         throw new Error(
-          `sharp binaries for ${platform}-${arch} are missing. Install with npm_config_cpu=${arch} (see README).`,
+          `sharp binaries for ${platform}-${arch} are missing. Install with npm_config_cpu=${arch} (see docs/development.md).`,
         );
       }
       for (const name of packages) {
