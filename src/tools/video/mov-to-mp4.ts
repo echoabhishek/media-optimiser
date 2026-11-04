@@ -3,7 +3,8 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import type { MediaInfo } from '../../main/engines/ffmpeg';
-import type { OptionValues } from '../../shared/types';
+import type { OptionValues, TrimRange } from '../../shared/types';
+import { trimArgs, trimmedDuration } from '../trim';
 import type { ToolDefinition } from '../types';
 
 type Codec = 'h264' | 'h265';
@@ -27,6 +28,7 @@ export const movToMp4: ToolDefinition = {
   operation: 'convert',
   inputExtensions: ['mov', 'm4v', 'mkv', 'webm', 'avi', 'mp4'],
   outputExtension: 'mp4',
+  supportsTrim: true,
   options: [
     {
       type: 'select',
@@ -234,31 +236,52 @@ export const movToMp4: ToolDefinition = {
     },
   ],
 
-  async run({ inputPath, outputPath, options, engines, signal, onProgress }) {
+  async run({
+    inputPath,
+    outputPath,
+    options,
+    trim,
+    engines,
+    signal,
+    onProgress,
+  }) {
     const { ffmpeg } = engines;
     const info = await ffmpeg.probe(inputPath);
     if (!info.hasVideo) throw new Error('No video stream found in this file.');
 
+    const duration = trimmedDuration(info.durationSec, trim);
+    if (duration === 0) throw new Error('The trimmed range is empty.');
+
     const limitMB =
       options.sizeLimit === 'none' ? 0 : Number(options.sizeLimit);
-    const crfArgs = encodeArgs(inputPath, outputPath, options, info, {
-      mode: 'crf',
-    });
+    const crfArgs = encodeArgs(
+      inputPath,
+      outputPath,
+      options,
+      info,
+      { mode: 'crf' },
+      trim,
+    );
     const progress = (from: number, to: number) => (p: number) =>
       onProgress(from + p * (to - from));
 
     // Normal quality-based encode; usually all that's needed.
     await ffmpeg.run(crfArgs, {
       signal,
-      durationSec: info.durationSec,
+      durationSec: duration,
       onProgress: progress(0, limitMB ? 0.5 : 1),
     });
     // Similarity is only meaningful when frames still line up one-to-one.
     const measure = async () => ({
       quality:
         options.fps === 'original'
-          ? ((await ffmpeg.ssim(outputPath, inputPath, 10, signal)) ??
-            undefined)
+          ? ((await ffmpeg.ssim(
+              outputPath,
+              inputPath,
+              10,
+              signal,
+              trim?.start,
+            )) ?? undefined)
           : undefined,
     });
     if (!limitMB) return measure();
@@ -267,7 +290,6 @@ export const movToMp4: ToolDefinition = {
     if ((await fs.stat(outputPath)).size <= limitBytes) return measure();
 
     // Too big: two-pass encode at the bitrate that fits the limit.
-    const duration = info.durationSec;
     if (!duration)
       throw new Error('Unknown duration, so the size limit cannot be applied.');
     const audioKbps =
@@ -286,12 +308,14 @@ export const movToMp4: ToolDefinition = {
     try {
       for (const pass of [1, 2] as const) {
         await ffmpeg.run(
-          encodeArgs(inputPath, outputPath, options, info, {
-            mode: 'bitrate',
-            videoKbps,
-            pass,
-            passlog,
-          }),
+          encodeArgs(
+            inputPath,
+            outputPath,
+            options,
+            info,
+            { mode: 'bitrate', videoKbps, pass, passlog },
+            trim,
+          ),
           {
             signal,
             durationSec: duration,
@@ -328,10 +352,12 @@ export function encodeArgs(
   options: OptionValues,
   info: MediaInfo,
   rate: RateControl,
+  trim?: TrimRange,
 ): string[] {
   const codec = options.codec as Codec;
   const isFirstPass = rate.mode === 'bitrate' && rate.pass === 1;
-  const args: string[] = ['-i', inputPath];
+  const t = trimArgs(trim);
+  const args: string[] = [...t.input, '-i', inputPath, ...t.output];
 
   // Video: first video stream only. This skips timecode/data tracks that
   // QuickTime files carry and MP4 can't hold.

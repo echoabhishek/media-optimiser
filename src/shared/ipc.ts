@@ -15,6 +15,7 @@ export const IPC = {
   revealPath: 'shell:reveal',
   openPath: 'shell:open',
   copyText: 'clipboard:write',
+  probe: 'media:probe',
 } as const;
 
 /** The API the preload script exposes on `window.mediaApi`. */
@@ -36,4 +37,6 @@ export interface MediaApi {
   revealPath(path: string): Promise<void>;
   openPath(path: string): Promise<void>;
   copyText(text: string): Promise<void>;
+  /** Duration in seconds, or null if unknown. */
+  getDuration(path: string): Promise<number | null>;
 }

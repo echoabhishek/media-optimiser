@@ -6,12 +6,14 @@ import {
   extension,
   formatBytes,
   formatMatch,
+  parseTime,
 } from '../shared/format';
 import type {
   JobState,
   OptionField,
   OptionValues,
   ToolPreset,
+  TrimRange,
 } from '../shared/types';
 import { tools } from '../tools';
 import type { ToolDefinition } from '../tools/types';
@@ -45,7 +47,7 @@ export async function runCli(args: string[]): Promise<number> {
   if (rest.includes('--help') || rest.includes('-h'))
     return print(toolHelpText(tool));
 
-  let parsed: { files: string[]; options: OptionValues; outDir?: string };
+  let parsed: ReturnType<typeof parseToolArgs>;
   try {
     parsed = parseToolArgs(tool, rest);
   } catch (err) {
@@ -54,7 +56,7 @@ export async function runCli(args: string[]): Promise<number> {
     );
     return 2;
   }
-  return convert(tool, parsed.files, parsed.options, parsed.outDir);
+  return convert(tool, parsed);
 }
 
 function findTool(name: string): ToolDefinition | undefined {
@@ -105,6 +107,12 @@ function toolHelpText(tool: ToolDefinition): string {
       `--preset <${tool.presets.map((p) => p.id).join('|')}>`,
       tool.presets.map((p) => `${p.id}: ${p.help ?? p.label}`).join('; '),
     ]);
+  }
+  if (tool.supportsTrim) {
+    rows.push(
+      ['--start <time>', 'Start at this time (seconds or m:ss)'],
+      ['--end <time>', 'Stop at this time (seconds or m:ss)'],
+    );
   }
   rows.push([
     '--out <dir>',
@@ -162,6 +170,8 @@ export function parseToolArgs(tool: ToolDefinition, args: string[]) {
   const options: OptionValues = {};
   let outDir: string | undefined;
   let preset: ToolPreset | undefined;
+  let start: number | undefined;
+  let end: number | undefined;
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -188,6 +198,18 @@ export function parseToolArgs(tool: ToolDefinition, args: string[]) {
     }
     if (rawKey === 'out') {
       outDir = path.resolve(takeValue());
+      continue;
+    }
+    if (tool.supportsTrim && (rawKey === 'start' || rawKey === 'end')) {
+      const v = takeValue();
+      const seconds = parseTime(v);
+      if (seconds == null) {
+        throw new Error(
+          `Invalid --${rawKey} "${v}". Use seconds or m:ss, e.g. 90 or 1:30`,
+        );
+      }
+      if (rawKey === 'start') start = seconds;
+      else end = seconds;
       continue;
     }
     const negated = rawKey.startsWith('no-');
@@ -232,19 +254,23 @@ export function parseToolArgs(tool: ToolDefinition, args: string[]) {
   ) {
     throw new Error(`Output folder not found: ${outDir}`);
   }
+  if (start != null && end != null && end <= start) {
+    throw new Error('--end must be after --start');
+  }
+  const trim: TrimRange | undefined =
+    start != null || end != null ? { start: start ?? 0, end } : undefined;
   return {
     files: [...new Set(files)],
     // Explicit flags override the preset.
     options: { ...preset?.values, ...options },
     outDir,
+    trim,
   };
 }
 
 async function convert(
   tool: ToolDefinition,
-  files: string[],
-  options: OptionValues,
-  outDir?: string,
+  { files, options, outDir, trim }: ReturnType<typeof parseToolArgs>,
 ): Promise<number> {
   const runner = new JobRunner();
   const tty = process.stdout.isTTY;
@@ -295,6 +321,7 @@ async function convert(
       inputPath,
       options,
       outputDir: outDir,
+      trim,
     })),
   );
   await finished;

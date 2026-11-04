@@ -2,6 +2,7 @@ import { BrowserWindow, clipboard, dialog, ipcMain, shell } from 'electron';
 import { IPC } from '../shared/ipc';
 import type { AppSettings, JobRequest } from '../shared/types';
 import { toManifest, tools } from '../tools';
+import { getEngines } from './engines';
 import { JobRunner } from './jobs/JobRunner';
 import type { SettingsStore } from './settings';
 
@@ -36,6 +37,10 @@ export function registerIpc(runner: JobRunner, settings: SettingsStore): void {
   ipcMain.handle(IPC.listJobs, () => runner.list());
   ipcMain.handle(IPC.clearFinished, () => runner.clearFinished());
   ipcMain.handle(IPC.revealPath, (_e, p: string) => shell.showItemInFolder(p));
+  ipcMain.handle(
+    IPC.probe,
+    async (_e, p: string) => (await getEngines().ffmpeg.probe(p)).durationSec,
+  );
   ipcMain.handle(IPC.copyText, (_e, text: string) => clipboard.writeText(text));
   ipcMain.handle(IPC.openPath, async (_e, p: string) => {
     await shell.openPath(p);

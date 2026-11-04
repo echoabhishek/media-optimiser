@@ -1,20 +1,32 @@
 import { useState } from 'react';
-import type { JobState } from '../../shared/types';
+import type { JobState, TrimRange } from '../../shared/types';
+import { TrimEditor } from './TrimEditor';
 import {
   basename,
   formatBytes,
   formatDuration,
   formatMatch,
+  formatTime,
 } from '../../shared/format';
 
 interface Props {
   pending: string[];
   jobs: JobState[];
   onRemovePending(path: string): void;
+  /** Present only when the current tool supports trimming. */
+  trims?: Record<string, TrimRange>;
+  onTrimChange?(path: string, trim: TrimRange | undefined): void;
 }
 
-export function FileList({ pending, jobs, onRemovePending }: Props) {
+export function FileList({
+  pending,
+  jobs,
+  onRemovePending,
+  trims,
+  onTrimChange,
+}: Props) {
   const api = window.mediaApi;
+  const [editing, setEditing] = useState<string | null>(null);
   if (!pending.length && !jobs.length) return null;
 
   return (
@@ -68,9 +80,18 @@ export function FileList({ pending, jobs, onRemovePending }: Props) {
             <span className="file-name" title={p}>
               {basename(p)}
             </span>
-            <span className="file-detail">Ready</span>
+            <span className="file-detail">
+              {trims?.[p]
+                ? `Ready · keeps ${formatTime(trims[p].start)} – ${trims[p].end != null ? formatTime(trims[p].end) : 'end'}`
+                : 'Ready'}
+            </span>
           </div>
           <div className="file-actions">
+            {onTrimChange && editing !== p && (
+              <button className="ghost" onClick={() => setEditing(p)}>
+                Trim
+              </button>
+            )}
             <button
               className="ghost"
               onClick={() => onRemovePending(p)}
@@ -79,6 +100,14 @@ export function FileList({ pending, jobs, onRemovePending }: Props) {
               Remove
             </button>
           </div>
+          {onTrimChange && editing === p && (
+            <TrimEditor
+              path={p}
+              value={trims?.[p]}
+              onChange={(t) => onTrimChange(p, t)}
+              onClose={() => setEditing(null)}
+            />
+          )}
         </li>
       ))}
     </ul>

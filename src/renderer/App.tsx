@@ -1,5 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { JobState, OptionValues, ToolManifest } from '../shared/types';
+import type {
+  JobState,
+  OptionValues,
+  ToolManifest,
+  TrimRange,
+} from '../shared/types';
 import { DropZone } from './components/DropZone';
 import { FileList } from './components/FileList';
 import { OptionsForm } from './components/OptionsForm';
@@ -16,6 +21,7 @@ export function App() {
   const [toolId, setToolId] = useState<string | null>(null);
   const [jobs, setJobs] = useState<Map<string, JobState>>(new Map());
   const [pending, setPending] = useState<string[]>([]);
+  const [trims, setTrims] = useState<Record<string, TrimRange>>({});
   const [notice, setNotice] = useState<string | null>(null);
   const [outputDir, setOutputDir] = useState<string | null>(null);
   const [optionsByTool, setOptionsByTool] = useState<
@@ -108,8 +114,10 @@ export function App() {
           inputPath,
           options,
           outputDir: outputDir ?? undefined,
+          trim: tool.supportsTrim ? trims[inputPath] : undefined,
         })),
       );
+      setTrims({});
     } catch (err) {
       setPending(files);
       setNotice((err as Error).message);
@@ -249,8 +257,18 @@ export function App() {
         <FileList
           pending={pending}
           jobs={toolJobs}
-          onRemovePending={(p) =>
-            setPending((prev) => prev.filter((x) => x !== p))
+          onRemovePending={(p) => {
+            setPending((prev) => prev.filter((x) => x !== p));
+            setTrims(({ [p]: _removed, ...rest }) => rest);
+          }}
+          trims={tool.supportsTrim ? trims : undefined}
+          onTrimChange={
+            tool.supportsTrim
+              ? (p, t) =>
+                  setTrims(({ [p]: _old, ...rest }) =>
+                    t ? { ...rest, [p]: t } : rest,
+                  )
+              : undefined
           }
         />
       </main>

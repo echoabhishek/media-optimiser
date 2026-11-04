@@ -1,10 +1,12 @@
 import type { Engines } from '../main/engines';
-import type { OptionValues, ToolManifest } from '../shared/types';
+import type { OptionValues, ToolManifest, TrimRange } from '../shared/types';
 
 export interface ToolRunContext {
   inputPath: string;
   outputPath: string;
   options: OptionValues;
+  /** Only for tools with `supportsTrim`. */
+  trim?: TrimRange;
   engines: Engines;
   signal: AbortSignal;
   /** Report progress as a 0..1 fraction. */

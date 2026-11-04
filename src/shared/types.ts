@@ -49,6 +49,12 @@ export type OptionField = SelectField | NumberField | ToggleField;
 export type OptionValue = string | number | boolean;
 export type OptionValues = Record<string, OptionValue>;
 
+/** Part of the input to keep, in seconds. No `end` = until the end. */
+export interface TrimRange {
+  start: number;
+  end?: number;
+}
+
 /** A named bundle of option values, e.g. "GitHub (under 10 MB)". */
 export interface ToolPreset {
   id: string;
@@ -70,6 +76,8 @@ export interface ToolManifest {
   outputExtension: string;
   options: OptionField[];
   presets?: ToolPreset[];
+  /** Whether the tool can process just part of the input (start/end). */
+  supportsTrim?: boolean;
 }
 
 /** Persisted user preferences (stored by the main process). */
@@ -89,6 +97,7 @@ export interface JobRequest {
   options: OptionValues;
   /** Folder for the output; defaults to the input file's folder. */
   outputDir?: string;
+  trim?: TrimRange;
 }
 
 export interface JobState {

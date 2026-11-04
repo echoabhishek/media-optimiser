@@ -55,6 +55,19 @@ describe('parseToolArgs', () => {
     );
   });
 
+  it('parses --start and --end into a trim range', () => {
+    expect(parse(mov, '--start', '0:03', '--end', '9.5').trim).toEqual({
+      start: 3,
+      end: 9.5,
+    });
+    expect(parse(mov, '--end', '5').trim).toEqual({ start: 0, end: 5 });
+    expect(parse(mov).trim).toBeUndefined();
+    expect(() => parse(mov, '--start', '9', '--end', '3')).toThrow(
+      '--end must be after --start',
+    );
+    expect(() => parse(mov, '--start', 'soon')).toThrow('Invalid --start');
+  });
+
   it('de-duplicates input files', () => {
     expect(parse(mov, mov).files).toEqual([mov]);
   });

@@ -35,3 +35,19 @@ export function formatDuration(ms: number): string {
 export function formatMatch(ssim: number): string {
   return `${(Math.floor(ssim * 1000) / 10).toFixed(1)}% match`;
 }
+
+/** "90", "1:30" or "1:02:03.5" → seconds; null if invalid. */
+export function parseTime(text: string): number | null {
+  if (!/^\d+(:\d{1,2}){0,2}(\.\d+)?$/.test(text.trim())) return null;
+  return text
+    .trim()
+    .split(':')
+    .reduce((total, part) => total * 60 + Number(part), 0);
+}
+
+/** 83.25 → "1:23.2" */
+export function formatTime(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = seconds - m * 60;
+  return `${m}:${s.toFixed(1).padStart(4, '0')}`;
+}

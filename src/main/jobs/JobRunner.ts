@@ -119,7 +119,7 @@ export class JobRunner extends EventEmitter<{ update: [JobState] }> {
     const options = resolveOptions(tool.options, job.request.options);
     log(
       'info',
-      `start ${tool.id} ${job.request.inputPath} ${JSON.stringify(options)}`,
+      `start ${tool.id} ${job.request.inputPath} ${JSON.stringify(options)}${job.request.trim ? ` trim=${JSON.stringify(job.request.trim)}` : ''}`,
     );
     let lastEmit = 0;
     try {
@@ -127,6 +127,7 @@ export class JobRunner extends EventEmitter<{ update: [JobState] }> {
         inputPath: job.request.inputPath,
         outputPath: tempPath,
         options,
+        trim: job.request.trim,
         engines: getEngines(),
         signal: job.abort.signal,
         onProgress: (p) => {

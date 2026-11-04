@@ -4,6 +4,7 @@ import started from 'electron-squirrel-startup';
 import { getCliArgs, runCli } from './cli';
 import { registerIpc } from './ipc';
 import { JobRunner } from './jobs/JobRunner';
+import { handlePreviewScheme, registerPreviewScheme } from './preview';
 import { SettingsStore } from './settings';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
@@ -56,7 +57,9 @@ if (cliArgs) {
     })
     .then((code) => app.exit(code));
 } else {
+  registerPreviewScheme();
   app.whenReady().then(() => {
+    handlePreviewScheme();
     registerIpc(runner, new SettingsStore());
     createWindow();
     app.on('activate', () => {

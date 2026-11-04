@@ -69,6 +69,8 @@ export class FfmpegEngine {
     reference: string,
     seconds = 10,
     signal?: AbortSignal,
+    /** Where the output starts within the reference (after a trim). */
+    referenceOffset = 0,
   ): Promise<number | null> {
     const { stderr } = await this.exec(
       [
@@ -78,6 +80,8 @@ export class FfmpegEngine {
         String(seconds),
         '-i',
         output,
+        '-ss',
+        String(referenceOffset),
         '-t',
         String(seconds),
         '-i',

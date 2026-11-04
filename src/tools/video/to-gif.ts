@@ -1,3 +1,4 @@
+import { trimArgs, trimmedDuration } from '../trim';
 import type { ToolDefinition } from '../types';
 
 export const toGif: ToolDefinition = {
@@ -9,6 +10,7 @@ export const toGif: ToolDefinition = {
   operation: 'convert',
   inputExtensions: ['mov', 'mp4', 'm4v', 'mkv', 'webm', 'avi'],
   outputExtension: 'gif',
+  supportsTrim: true,
   options: [
     {
       type: 'select',
@@ -42,7 +44,15 @@ export const toGif: ToolDefinition = {
     },
   ],
 
-  async run({ inputPath, outputPath, options, engines, signal, onProgress }) {
+  async run({
+    inputPath,
+    outputPath,
+    options,
+    trim,
+    engines,
+    signal,
+    onProgress,
+  }) {
     const { ffmpeg } = engines;
     const info = await ffmpeg.probe(inputPath);
     if (!info.hasVideo) throw new Error('No video stream found in this file.');
@@ -55,17 +65,24 @@ export const toGif: ToolDefinition = {
       `[a]palettegen=stats_mode=diff[p];` +
       `[b][p]paletteuse=dither=sierra2_4a:diff_mode=rectangle`;
 
+    const t = trimArgs(trim);
     await ffmpeg.run(
       [
+        ...t.input,
         '-i',
         inputPath,
+        ...t.output,
         '-filter_complex',
         filter,
         '-loop',
         options.loop ? '0' : '-1',
         outputPath,
       ],
-      { signal, durationSec: info.durationSec, onProgress },
+      {
+        signal,
+        durationSec: trimmedDuration(info.durationSec, trim),
+        onProgress,
+      },
     );
   },
 };
