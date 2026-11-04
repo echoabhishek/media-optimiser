@@ -12,8 +12,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, windows-latest, ubuntu-latest]
+        include:
+          - { os: macos-latest, arch: arm64 }
+          - { os: macos-latest, arch: x64 } # Intel Macs
+          - { os: windows-latest, arch: x64 }
+          - { os: ubuntu-latest, arch: x64 }
     runs-on: ${{ matrix.os }}
+    env:
+      # Makes ffmpeg-static download the binary for the target architecture.
+      npm_config_arch: ${{ matrix.arch }}
+      # Signing activates only when these secrets are set (see README).
+      APPLE_ID: ${{ secrets.APPLE_ID }}
+      APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -24,9 +35,10 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y rpm fakeroot dpkg
       - run: npm ci
       - run: npm run typecheck
-      - run: npm test
-      - run: npm run make
+      - if: matrix.arch == runner.arch || runner.os != 'macOS'
+        run: npm test
+      - run: npm run make -- --arch=${{ matrix.arch }}
       - uses: actions/upload-artifact@v4
         with:
-          name: media-optimiser-${{ matrix.os }}
+          name: media-optimiser-${{ matrix.os }}-${{ matrix.arch }}
           path: out/make/**
