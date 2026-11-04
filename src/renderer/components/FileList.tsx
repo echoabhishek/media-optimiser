@@ -1,6 +1,11 @@
 import { useState } from 'react';
 import type { JobState } from '../../shared/types';
-import { basename, formatBytes, formatDuration } from '../../shared/format';
+import {
+  basename,
+  formatBytes,
+  formatDuration,
+  formatMatch,
+} from '../../shared/format';
 
 interface Props {
   pending: string[];
@@ -108,6 +113,15 @@ function JobDetail({ job }: { job: JobState }) {
               ? ` ${Math.round(saved * 100)}% smaller`
               : ` ${Math.round(-saved * 100)}% larger`}
           </span>
+          {job.quality != null && (
+            <span
+              className="muted"
+              title="Visual similarity to the original (SSIM), measured on the first 10 seconds"
+            >
+              {' '}
+              · {formatMatch(job.quality)}
+            </span>
+          )}
           {job.startedAt && job.finishedAt && (
             <span className="muted">
               {' '}

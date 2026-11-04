@@ -99,6 +99,7 @@ For a new back-end (e.g. `sharp` for images), add it to `Engines` in
 | Size limit       | CRF encode first; only if the result is too big, a two-pass encode at the bitrate that fits (fails clearly if under ~100 kbps) |
 | Max frame rate   | `-fpsmax`: caps the rate, never increases it                                                                                   |
 | Metadata         | Location and device info removed by default, creation date kept; advanced toggle keeps everything                              |
+| Quality score    | SSIM of the result vs the original over the first 10 s, shown as "99.9% match"; skipped when the frame rate is capped          |
 | Presets          | Standard, Chat, GitHub (10 MB), Email (25 MB), Best quality. Also available on the command line as `--preset <id>`             |
 | Audio            | AAC 160k/256k, or removed. Skipped automatically if the source has none                                                        |
 | Always           | `yuv420p`, `+faststart` (web streaming), metadata copied, only the first video track (drops QuickTime timecode tracks)         |

@@ -23,6 +23,7 @@ async function argsFor(
       height: 1964,
       ...info,
     }),
+    ssim: async () => 0.9991,
     run: async (args: string[]) => {
       captured = args;
     },
@@ -107,6 +108,30 @@ describe('mov-to-mp4', () => {
     ).toBe('0');
   });
 
+  it('reports visual similarity, except when the frame rate changes', async () => {
+    const run = (options: OptionValues) =>
+      movToMp4.run({
+        inputPath: 'in.mov',
+        outputPath: 'out.mp4',
+        options: resolveOptions(movToMp4.options, options),
+        engines: {
+          ffmpeg: {
+            probe: async () => ({
+              durationSec: 5,
+              hasVideo: true,
+              hasAudio: false,
+            }),
+            ssim: async () => 0.9991,
+            run: async () => {},
+          },
+        } as unknown as Engines,
+        signal: new AbortController().signal,
+        onProgress: () => {},
+      });
+    expect(await run({})).toEqual({ quality: 0.9991 });
+    expect(await run({ fps: '30' })).toEqual({ quality: undefined });
+  });
+
   it('every preset only uses valid option values', () => {
     for (const preset of movToMp4.presets ?? []) {
       expect(resolveOptions(movToMp4.options, preset.values)).toMatchObject(
@@ -135,6 +160,7 @@ describe('mov-to-mp4 size limit', () => {
         hasAudio: true,
         height: 1080,
       }),
+      ssim: async () => 0.9991,
       run: async (args: string[]) => {
         calls.push(args);
         if (args.at(-1) === out)

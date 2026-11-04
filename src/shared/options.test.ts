@@ -44,3 +44,11 @@ describe('resolveOptions', () => {
     );
   });
 });
+
+describe('formatMatch', () => {
+  it('floors so near-identical never rounds up to 100%', async () => {
+    const { formatMatch } = await import('./format');
+    expect(formatMatch(0.99994)).toBe('99.9% match');
+    expect(formatMatch(0.9876)).toBe('98.7% match');
+  });
+});

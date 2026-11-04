@@ -1,7 +1,12 @@
 import { app } from 'electron';
 import fs from 'node:fs';
 import path from 'node:path';
-import { basename, extension, formatBytes } from '../shared/format';
+import {
+  basename,
+  extension,
+  formatBytes,
+  formatMatch,
+} from '../shared/format';
 import type {
   JobState,
   OptionField,
@@ -271,7 +276,7 @@ async function convert(
         const out = job.outputBytes ?? 0;
         const pct = Math.round((1 - out / job.inputBytes) * 100);
         console.log(
-          `✓ ${label}  ${formatBytes(job.inputBytes)} → ${formatBytes(out)} (${pct >= 0 ? `${pct}% smaller` : `${-pct}% larger`})\n  ${job.outputPath}`,
+          `✓ ${label}  ${formatBytes(job.inputBytes)} → ${formatBytes(out)} (${pct >= 0 ? `${pct}% smaller` : `${-pct}% larger`}${job.quality != null ? `, ${formatMatch(job.quality)}` : ''})\n  ${job.outputPath}`,
         );
       } else {
         failed++;

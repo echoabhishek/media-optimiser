@@ -101,6 +101,8 @@ export interface JobState {
   progress: number | null;
   inputBytes: number;
   outputBytes?: number;
+  /** Visual similarity to the original, 0..1 (SSIM), when measured. */
+  quality?: number;
   error?: string;
   /** Full report for "Copy error details" (versions, options, ffmpeg output). */
   errorDetails?: string;

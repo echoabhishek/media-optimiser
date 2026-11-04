@@ -123,7 +123,7 @@ export class JobRunner extends EventEmitter<{ update: [JobState] }> {
     );
     let lastEmit = 0;
     try {
-      await tool.run({
+      const result = await tool.run({
         inputPath: job.request.inputPath,
         outputPath: tempPath,
         options,
@@ -147,6 +147,7 @@ export class JobRunner extends EventEmitter<{ update: [JobState] }> {
         status: 'done',
         progress: 1,
         outputBytes: size,
+        quality: result?.quality,
         finishedAt: Date.now(),
       });
     } catch (err) {

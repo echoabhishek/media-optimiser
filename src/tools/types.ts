@@ -16,6 +16,12 @@ export interface ToolRunContext {
  * (executed in the main process). Add a tool by creating one file that
  * exports a ToolDefinition and registering it in `tools/index.ts`.
  */
+/** Optional extras a tool can report about its output. */
+export interface ToolResult {
+  /** Visual similarity to the original, 0..1 (SSIM). */
+  quality?: number;
+}
+
 export interface ToolDefinition extends ToolManifest {
-  run(ctx: ToolRunContext): Promise<void>;
+  run(ctx: ToolRunContext): Promise<ToolResult | void>;
 }

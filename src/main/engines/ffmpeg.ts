@@ -59,6 +59,41 @@ export class FfmpegEngine {
     };
   }
 
+  /**
+   * Visual similarity (SSIM, 1 = identical) of `output` to `reference` over
+   * the first `seconds`. The reference is scaled to the output's size.
+   * Returns null if it can't be measured.
+   */
+  async ssim(
+    output: string,
+    reference: string,
+    seconds = 10,
+    signal?: AbortSignal,
+  ): Promise<number | null> {
+    const { stderr } = await this.exec(
+      [
+        '-hide_banner',
+        '-nostdin',
+        '-t',
+        String(seconds),
+        '-i',
+        output,
+        '-t',
+        String(seconds),
+        '-i',
+        reference,
+        '-lavfi',
+        '[1:v][0:v]scale2ref=flags=bicubic[ref][out];[out][ref]ssim',
+        '-f',
+        'null',
+        '-',
+      ],
+      { signal, allowFailure: true },
+    );
+    const m = /SSIM .*All:([\d.]+)/.exec(stderr);
+    return m ? Number(m[1]) : null;
+  }
+
   /** Runs ffmpeg with the given arguments, reporting progress. */
   async run(args: string[], opts: RunOptions = {}): Promise<void> {
     const full = [

@@ -253,10 +253,18 @@ export const movToMp4: ToolDefinition = {
       durationSec: info.durationSec,
       onProgress: progress(0, limitMB ? 0.5 : 1),
     });
-    if (!limitMB) return;
+    // Similarity is only meaningful when frames still line up one-to-one.
+    const measure = async () => ({
+      quality:
+        options.fps === 'original'
+          ? ((await ffmpeg.ssim(outputPath, inputPath, 10, signal)) ??
+            undefined)
+          : undefined,
+    });
+    if (!limitMB) return measure();
 
     const limitBytes = limitMB * 1_000_000;
-    if ((await fs.stat(outputPath)).size <= limitBytes) return;
+    if ((await fs.stat(outputPath)).size <= limitBytes) return measure();
 
     // Too big: two-pass encode at the bitrate that fits the limit.
     const duration = info.durationSec;
@@ -294,6 +302,7 @@ export const movToMp4: ToolDefinition = {
           },
         );
       }
+      return measure();
     } finally {
       const prefix = path.basename(passlog);
       for (const f of await fs.readdir(os.tmpdir())) {

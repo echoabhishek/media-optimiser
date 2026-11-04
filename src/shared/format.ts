@@ -30,3 +30,8 @@ export function formatDuration(ms: number): string {
   const s = Math.round(ms / 1000);
   return s < 60 ? `${s}s` : `${Math.floor(s / 60)}m ${s % 60}s`;
 }
+
+/** SSIM 0..1 → "99.9% match" (floored, so 0.99999 never shows as 100%). */
+export function formatMatch(ssim: number): string {
+  return `${(Math.floor(ssim * 1000) / 10).toFixed(1)}% match`;
+}
