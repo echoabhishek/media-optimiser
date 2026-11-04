@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Notification, shell } from 'electron';
+import { app, BrowserWindow, nativeTheme, Notification, shell } from 'electron';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
 import { getCliArgs, runCli } from './cli';
@@ -23,7 +23,7 @@ const createWindow = () => {
     minWidth: 760,
     minHeight: 520,
     title: 'Media Optimiser',
-    backgroundColor: '#111214',
+    backgroundColor: nativeTheme.shouldUseDarkColors ? '#141210' : '#EEF1F6',
     icon: iconPath(), // Windows/Linux taskbar; macOS uses the bundle icon
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
@@ -68,7 +68,10 @@ if (cliArgs) {
   registerPreviewScheme();
   app.whenReady().then(() => {
     handlePreviewScheme();
-    registerIpc(runner, new SettingsStore());
+    const settings = new SettingsStore();
+    // Drives prefers-color-scheme in the page and the native window chrome.
+    nativeTheme.themeSource = settings.get().theme;
+    registerIpc(runner, settings);
     notifyWhenBatchFinishes();
     createWindow();
     app.on('activate', () => {

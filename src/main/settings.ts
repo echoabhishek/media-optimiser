@@ -9,6 +9,7 @@ const DEFAULTS: AppSettings = {
   toolOptions: {},
   trashOriginals: false,
   watch: null,
+  theme: 'light',
 };
 
 /**

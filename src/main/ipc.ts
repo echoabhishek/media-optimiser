@@ -4,6 +4,7 @@ import {
   dialog,
   ipcMain,
   nativeImage,
+  nativeTheme,
   shell,
 } from 'electron';
 import fs from 'node:fs';
@@ -22,9 +23,10 @@ import type { SettingsStore } from './settings';
 export function registerIpc(runner: JobRunner, settings: SettingsStore): void {
   ipcMain.handle(IPC.listTools, () => tools.map(toManifest));
   ipcMain.handle(IPC.getSettings, () => settings.get());
-  ipcMain.handle(IPC.updateSettings, (_e, patch: Partial<AppSettings>) =>
-    settings.update(patch),
-  );
+  ipcMain.handle(IPC.updateSettings, (_e, patch: Partial<AppSettings>) => {
+    if (patch.theme) nativeTheme.themeSource = patch.theme;
+    return settings.update(patch);
+  });
 
   ipcMain.handle(IPC.pickFiles, async (e, extensions: string[]) => {
     const win = BrowserWindow.fromWebContents(e.sender)!;

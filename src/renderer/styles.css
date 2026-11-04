@@ -1,33 +1,85 @@
 :root {
-  --bg: #f6f6f7;
+  --bg: #eef1f6;
   --surface: #ffffff;
-  --sidebar: #eeeef0;
-  --border: #e2e2e6;
-  --text: #17171a;
-  --muted: #6b6b75;
-  --accent: #4f46e5;
-  --accent-text: #ffffff;
-  --accent-soft: #eef0ff;
-  --good: #15803d;
-  --bad: #b91c1c;
-  --radius: 10px;
-  color-scheme: light dark;
+  --sunken: #f1f3f8;
+  --border: #e3e7ef;
+  --border-strong: #c9d0dd;
+  --text: #1b1f27;
+  --muted: #5b6372;
+  --good: #1e7a36;
+  --good-soft: #e8f7ec;
+  --bad: #b42318;
+  --shadow: 0 1px 2px rgba(30, 40, 70, 0.06);
+  --radius: 18px;
+  --radius-sm: 12px;
+  /* Media colours: --x-dot for marks, --x for filled buttons (with
+     --x-on as text on it), --x-ink for coloured text, --x-soft for tints. */
+  --video-dot: #e5484d;
+  --video: #c8363b;
+  --video-ink: #9e2a2e;
+  --video-soft: #fff0f0;
+  --audio-dot: #7b61ff;
+  --audio: #5b3fe0;
+  --audio-ink: #4a32c0;
+  --audio-soft: #f1eeff;
+  --image-dot: #2ba84a;
+  --image: #1e7a36;
+  --image-ink: #1e6a31;
+  --image-soft: #e8f7ec;
+  --on-accent: #ffffff;
+  color-scheme: light;
 }
 
+/* The theme setting drives this through Electron's nativeTheme. */
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #111214;
-    --surface: #1a1b1e;
-    --sidebar: #16171a;
-    --border: #2a2b30;
-    --text: #ececef;
-    --muted: #8d8d98;
-    --accent: #7c74ff;
-    --accent-text: #ffffff;
-    --accent-soft: #24233d;
-    --good: #4ade80;
-    --bad: #f87171;
+    --bg: #141210;
+    --surface: #1c1a17;
+    --sunken: #26231f;
+    --border: #2c2924;
+    --border-strong: #3a362f;
+    --text: #ede8e0;
+    --muted: #a39b8f;
+    --good: #7ddb95;
+    --good-soft: #1a2e1f;
+    --bad: #ff8a80;
+    --shadow: none;
+    --video-dot: #ff6b6e;
+    --video: #ff6b6e;
+    --video-ink: #ff9a9c;
+    --video-soft: #3a1f1e;
+    --audio-dot: #9b87ff;
+    --audio: #9b87ff;
+    --audio-ink: #b9aaff;
+    --audio-soft: #262040;
+    --image-dot: #4cc26a;
+    --image: #4cc26a;
+    --image-ink: #7ddb95;
+    --image-soft: #1a2e1f;
+    --on-accent: #16120f;
+    color-scheme: dark;
   }
+}
+
+/* The selected tool's media type colours the whole window. */
+.app,
+.app[data-kind='video'] {
+  --accent: var(--video);
+  --accent-ink: var(--video-ink);
+  --accent-soft: var(--video-soft);
+  --accent-dot: var(--video-dot);
+}
+.app[data-kind='audio'] {
+  --accent: var(--audio);
+  --accent-ink: var(--audio-ink);
+  --accent-soft: var(--audio-soft);
+  --accent-dot: var(--audio-dot);
+}
+.app[data-kind='image'] {
+  --accent: var(--image);
+  --accent-ink: var(--image-ink);
+  --accent-soft: var(--image-soft);
+  --accent-dot: var(--image-dot);
 }
 
 * {
@@ -45,11 +97,8 @@ body {
   background: var(--bg);
   color: var(--text);
   font:
-    14px/1.45 system-ui,
-    -apple-system,
-    'Segoe UI',
-    Roboto,
-    Ubuntu,
+    14px/1.45 'Figtree Variable',
+    system-ui,
     sans-serif;
   -webkit-font-smoothing: antialiased;
 }
@@ -76,7 +125,7 @@ svg {
 
 /* ---------- Sidebar ---------- */
 .sidebar {
-  background: var(--sidebar);
+  background: var(--surface);
   border-right: 1px solid var(--border);
   padding: 18px 12px;
   overflow-y: auto;
@@ -94,7 +143,7 @@ svg {
   width: 18px;
   height: 18px;
   border-radius: 5px;
-  background: linear-gradient(135deg, var(--accent), #22d3ee);
+  background: var(--accent-dot);
 }
 
 .nav-group h2 {
@@ -132,7 +181,7 @@ svg {
 
 .nav-item.active {
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-ink);
   font-weight: 550;
 }
 
@@ -209,7 +258,7 @@ button.ghost:disabled:hover {
 }
 
 .changed {
-  color: var(--accent);
+  color: var(--accent-ink);
   font-weight: 500;
 }
 
@@ -238,7 +287,7 @@ button.ghost:disabled:hover {
 .chip.on {
   background: var(--accent-soft);
   border-color: var(--accent);
-  color: var(--accent);
+  color: var(--accent-ink);
   font-weight: 600;
 }
 
@@ -269,7 +318,7 @@ button.ghost:disabled:hover {
 
 .segmented button.on {
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-ink);
   box-shadow: inset 0 0 0 1px var(--accent);
   font-weight: 600;
 }
@@ -457,7 +506,7 @@ select {
 button.primary {
   border: 0;
   background: var(--accent);
-  color: var(--accent-text);
+  color: var(--on-accent);
   padding: 7px 16px;
   border-radius: 8px;
   font-weight: 600;
@@ -597,4 +646,42 @@ button.ghost:hover {
   align-items: center;
   gap: 8px;
   font-size: 13px;
+}
+
+/* ---------- Theme switch ---------- */
+.theme-switch {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--sunken);
+}
+
+.theme-switch button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--muted);
+}
+
+.theme-switch button:hover {
+  color: var(--text);
+}
+
+.theme-switch button.on {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow:
+    var(--shadow),
+    0 0 0 1px var(--border);
+}
+
+.theme-switch svg {
+  width: 16px;
+  height: 16px;
 }

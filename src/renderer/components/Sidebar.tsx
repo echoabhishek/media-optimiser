@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { MediaKind, ToolManifest } from '../../shared/types';
 
 const KINDS: { kind: MediaKind; label: string; icon: string }[] = [
@@ -22,9 +23,10 @@ interface Props {
   tools: ToolManifest[];
   selectedId: string | null;
   onSelect(id: string): void;
+  footer?: ReactNode;
 }
 
-export function Sidebar({ tools, selectedId, onSelect }: Props) {
+export function Sidebar({ tools, selectedId, onSelect, footer }: Props) {
   return (
     <nav className="sidebar">
       <div className="brand">
@@ -57,6 +59,7 @@ export function Sidebar({ tools, selectedId, onSelect }: Props) {
           </section>
         );
       })}
+      {footer}
     </nav>
   );
 }

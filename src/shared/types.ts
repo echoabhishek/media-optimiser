@@ -87,6 +87,9 @@ export interface WatchTarget {
 }
 
 /** Persisted user preferences (stored by the main process). */
+/** 'system' follows the OS light/dark setting. */
+export type ThemePreference = 'light' | 'dark' | 'system';
+
 export interface AppSettings {
   selectedToolId: string | null;
   /** null = save next to the original file. */
@@ -96,6 +99,7 @@ export interface AppSettings {
   /** Move each original to the Trash after a successful conversion. */
   trashOriginals: boolean;
   watch: WatchTarget | null;
+  theme: ThemePreference;
 }
 
 export type JobStatus = 'queued' | 'running' | 'done' | 'error' | 'cancelled';

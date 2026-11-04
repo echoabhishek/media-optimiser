@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type {
+  ThemePreference,
   WatchTarget,
   JobState,
   OptionValues,
@@ -11,6 +12,7 @@ import { FileList } from './components/FileList';
 import { OptionsForm } from './components/OptionsForm';
 import { Presets } from './components/Presets';
 import { Sidebar } from './components/Sidebar';
+import { ThemeSwitch } from './components/ThemeSwitch';
 import { basename, extension, formatBytes } from '../shared/format';
 import { resolveOptions } from '../shared/options';
 
@@ -27,6 +29,7 @@ export function App() {
   const [outputDir, setOutputDir] = useState<string | null>(null);
   const [trashOriginals, setTrashOriginals] = useState(false);
   const [watch, setWatchState] = useState<WatchTarget | null>(null);
+  const [theme, setTheme] = useState<ThemePreference>('light');
   const [optionsByTool, setOptionsByTool] = useState<
     Record<string, OptionValues>
   >({});
@@ -42,6 +45,7 @@ export function App() {
       setOutputDir(s.outputDir);
       setTrashOriginals(s.trashOriginals);
       setWatchState(s.watch);
+      setTheme(s.theme);
       setOptionsByTool(s.toolOptions);
       setLoaded(true);
     });
@@ -62,8 +66,9 @@ export function App() {
       outputDir,
       toolOptions: optionsByTool,
       trashOriginals,
+      theme,
     });
-  }, [loaded, toolId, outputDir, optionsByTool, trashOriginals]);
+  }, [loaded, toolId, outputDir, optionsByTool, trashOriginals, theme]);
 
   const tool = tools.find((t) => t.id === toolId);
   const toolJobs = useMemo(
@@ -121,7 +126,12 @@ export function App() {
   if (!tool) {
     return (
       <div className="app">
-        <Sidebar tools={tools} selectedId={toolId} onSelect={setToolId} />
+        <Sidebar
+          tools={tools}
+          selectedId={toolId}
+          onSelect={setToolId}
+          footer={<ThemeSwitch value={theme} onChange={setTheme} />}
+        />
         <main className="content" />
       </div>
     );
@@ -195,10 +205,11 @@ export function App() {
   );
 
   return (
-    <div className="app">
+    <div className="app" data-kind={tool.kind}>
       <Sidebar
         tools={tools}
         selectedId={toolId}
+        footer={<ThemeSwitch value={theme} onChange={setTheme} />}
         onSelect={(id) => {
           setToolId(id);
           setPending([]);
