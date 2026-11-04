@@ -12,22 +12,24 @@ export function Presets({ presets, values, onApply }: Props) {
     Object.entries(p.values).every(([k, v]) => values[k] === v),
   );
   return (
-    <div className="option presets">
-      <span className="option-label">Optimise for</span>
-      <div className="chips">
+    <div className="presets">
+      <span className="option-label">
+        Optimise for
+        {!active && <span className="changed"> · custom settings</span>}
+      </span>
+      <div className="preset-grid">
         {presets.map((p) => (
           <button
             key={p.id}
-            className={p === active ? 'chip on' : 'chip'}
+            className={p === active ? 'preset on' : 'preset'}
             aria-pressed={p === active}
-            title={p.help}
             onClick={() => onApply(p.values)}
           >
-            {p.label}
+            <strong>{p.label}</strong>
+            <span>{p.help}</span>
           </button>
         ))}
       </div>
-      <p className="option-help">{active?.help ?? 'Custom settings'}</p>
     </div>
   );
 }

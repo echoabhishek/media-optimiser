@@ -47,20 +47,25 @@ export function FileList({
             api.startDrag(job.outputPath);
           }}
         >
+          <StatusTile job={job} />
           <div className="file-main">
             <span className="file-name" title={job.inputPath}>
               {basename(job.inputPath)}
             </span>
-            <JobDetail job={job} />
+            {job.status === 'running' ? (
+              <div className="progress" aria-hidden>
+                <div
+                  style={{
+                    width: `${Math.round((job.progress ?? 0) * 100)}%`,
+                  }}
+                />
+              </div>
+            ) : (
+              <JobDetail job={job} />
+            )}
           </div>
-          {(job.status === 'running' || job.status === 'queued') && (
-            <div className="progress" aria-hidden>
-              <div
-                style={{ width: `${Math.round((job.progress ?? 0) * 100)}%` }}
-              />
-            </div>
-          )}
           <div className="file-actions">
+            {job.status === 'done' && <SavedBadge job={job} />}
             {(job.status === 'running' || job.status === 'queued') && (
               <button className="ghost" onClick={() => api.cancelJob(job.id)}>
                 Cancel
@@ -90,6 +95,7 @@ export function FileList({
       ))}
       {pending.map((p) => (
         <li key={p} className="file pending">
+          <span className="tile" aria-hidden />
           <div className="file-main">
             <span className="file-name" title={p}>
               {basename(p)}
@@ -147,15 +153,9 @@ function JobDetail({ job }: { job: JobState }) {
       );
     case 'done': {
       const out = job.outputBytes ?? 0;
-      const saved = 1 - out / job.inputBytes;
       return (
         <span className="file-detail">
           {formatBytes(job.inputBytes)} → <strong>{formatBytes(out)}</strong>
-          <span className={saved >= 0 ? 'saved' : 'grew'}>
-            {saved >= 0
-              ? ` ${Math.round(saved * 100)}% smaller`
-              : ` ${Math.round(-saved * 100)}% larger`}
-          </span>
           {job.quality != null && (
             <span
               className="muted"
@@ -186,6 +186,43 @@ function JobDetail({ job }: { job: JobState }) {
     case 'cancelled':
       return <span className="file-detail muted">Cancelled</span>;
   }
+}
+
+/** Square on the left of each file: a tick, the progress or a warning. */
+function StatusTile({ job }: { job: JobState }) {
+  switch (job.status) {
+    case 'done':
+      return (
+        <span className="tile done" aria-label="Done">
+          <svg viewBox="0 0 24 24" aria-hidden>
+            <path d="M5 12.5l4.5 4.5L19 7.5" />
+          </svg>
+        </span>
+      );
+    case 'running':
+      return (
+        <span className="tile running">
+          {job.progress != null ? `${Math.round(job.progress * 100)}%` : '…'}
+        </span>
+      );
+    case 'error':
+      return (
+        <span className="tile error" aria-label="Failed">
+          !
+        </span>
+      );
+    default:
+      return <span className="tile" aria-hidden />;
+  }
+}
+
+function SavedBadge({ job }: { job: JobState }) {
+  const saved = 1 - (job.outputBytes ?? 0) / job.inputBytes;
+  return saved >= 0 ? (
+    <span className="badge saved">{Math.round(saved * 100)}% smaller</span>
+  ) : (
+    <span className="badge grew">{Math.round(-saved * 100)}% larger</span>
+  );
 }
 
 function CopyButton({ text }: { text: string }) {

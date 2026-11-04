@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type {
+  MediaKind,
   ThemePreference,
   WatchTarget,
   JobState,
@@ -11,8 +12,8 @@ import { DropZone } from './components/DropZone';
 import { FileList } from './components/FileList';
 import { OptionsForm } from './components/OptionsForm';
 import { Presets } from './components/Presets';
-import { Sidebar } from './components/Sidebar';
 import { ThemeSwitch } from './components/ThemeSwitch';
+import { TopBar } from './components/TopBar';
 import { basename, extension, formatBytes } from '../shared/format';
 import { resolveOptions } from '../shared/options';
 
@@ -123,18 +124,31 @@ export function App() {
     return api.onOpenFiles((files) => openFiles.current(files));
   }, [loaded]);
 
+  // Each media tab reopens the tool last used in it.
+  const lastToolByKind = useRef<Partial<Record<MediaKind, string>>>({});
+  if (tool) lastToolByKind.current[tool.kind] = tool.id;
+
+  const selectTool = (id: string) => {
+    setToolId(id);
+    setPending([]);
+    setNotice(null);
+  };
+  const topBar = (
+    <TopBar
+      tools={tools}
+      kind={tool?.kind}
+      onSelectKind={(kind) => {
+        const id =
+          lastToolByKind.current[kind] ??
+          tools.find((t) => t.kind === kind)?.id;
+        if (id && id !== toolId) selectTool(id);
+      }}
+      end={<ThemeSwitch value={theme} onChange={setTheme} />}
+    />
+  );
+
   if (!tool) {
-    return (
-      <div className="app">
-        <Sidebar
-          tools={tools}
-          selectedId={toolId}
-          onSelect={setToolId}
-          footer={<ThemeSwitch value={theme} onChange={setTheme} />}
-        />
-        <main className="content" />
-      </div>
-    );
+    return <div className="app">{topBar}</div>;
   }
 
   const options = resolveOptions(tool.options, optionsByTool[tool.id]);
@@ -204,65 +218,32 @@ export function App() {
     (j) => !['queued', 'running'].includes(j.status),
   );
 
+  const siblings = tools.filter((t) => t.kind === tool.kind);
+  const hasFiles = pending.length > 0 || toolJobs.length > 0;
+
   return (
     <div className="app" data-kind={tool.kind}>
-      <Sidebar
-        tools={tools}
-        selectedId={toolId}
-        footer={<ThemeSwitch value={theme} onChange={setTheme} />}
-        onSelect={(id) => {
-          setToolId(id);
-          setPending([]);
-          setNotice(null);
-        }}
-      />
-      <main className="content">
-        {watch && (
-          <div className="watch-banner" role="status">
-            <span>
-              Watching <strong>{basename(watch.folder)}</strong>: new files are
-              converted with{' '}
-              <strong>
-                {tools.find((t) => t.id === watch.toolId)?.name ?? watch.toolId}
-              </strong>{' '}
-              using its saved settings.
-            </span>
-            <button
-              className="ghost"
-              onClick={async () => {
-                await api.setWatch(null);
-                setWatchState(null);
-              }}
-            >
-              Stop
-            </button>
-          </div>
-        )}
-        <header className="tool-header">
-          <h1>{tool.name}</h1>
-          <p>{tool.description}</p>
-        </header>
-
-        <section className="card">
-          <div className="card-header">
-            <h2>Settings</h2>
-            <button
-              className="ghost"
-              disabled={isDefault}
-              title={
-                isDefault
-                  ? 'Already using the default settings'
-                  : 'Undo all changes to these settings'
-              }
-              onClick={() => {
-                setOptionsByTool(({ [tool.id]: _removed, ...rest }) => rest);
-                setOutputDir(null);
-                setTrashOriginals(false);
-              }}
-            >
-              Restore defaults
-            </button>
-          </div>
+      {topBar}
+      <div className="workspace">
+        <section className="panel settings" aria-label="Settings">
+          {siblings.length > 1 && (
+            <div className="tool-tabs">
+              {siblings.map((t) => (
+                <button
+                  key={t.id}
+                  className={t.id === tool.id ? 'tool-tab on' : 'tool-tab'}
+                  aria-pressed={t.id === tool.id}
+                  onClick={() => selectTool(t.id)}
+                >
+                  {t.name}
+                </button>
+              ))}
+            </div>
+          )}
+          <header className="tool-header">
+            <h1>{tool.name}</h1>
+            <p>{tool.description}</p>
+          </header>
           {tool.presets && (
             <Presets
               presets={tool.presets}
@@ -280,26 +261,16 @@ export function App() {
             values={options}
             onChange={setOption}
           />
-          {advancedFields.length > 0 && (
-            <details className="advanced">
-              <summary>
-                Advanced settings
-                {advancedChanged > 0 && (
-                  <span className="changed"> · {advancedChanged} changed</span>
-                )}
-              </summary>
-              <OptionsForm
-                fields={advancedFields}
-                values={options}
-                onChange={setOption}
-              />
-            </details>
-          )}
           <div className="output-row">
             <span className="option-label">Save to</span>
             <span className="output-path" title={outputDir ?? undefined}>
-              {outputDir ? basename(outputDir) : 'Same folder as the original'}
+              {outputDir ? basename(outputDir) : 'Next to the originals'}
             </span>
+            {outputDir && (
+              <button className="ghost" onClick={() => setOutputDir(null)}>
+                Reset
+              </button>
+            )}
             <button
               className="ghost"
               onClick={async () => {
@@ -309,106 +280,156 @@ export function App() {
             >
               Change…
             </button>
-            {outputDir && (
-              <button className="ghost" onClick={() => setOutputDir(null)}>
-                Reset
-              </button>
-            )}
           </div>
-          <label className="trash-row">
-            <input
-              type="checkbox"
-              className="toggle"
-              checked={trashOriginals}
-              onChange={(e) => setTrashOriginals(e.target.checked)}
+          <details className="advanced">
+            <summary>
+              Advanced settings
+              {advancedChanged + (trashOriginals ? 1 : 0) > 0 && (
+                <span className="changed">
+                  {' '}
+                  · {advancedChanged + (trashOriginals ? 1 : 0)} changed
+                </span>
+              )}
+            </summary>
+            <OptionsForm
+              fields={advancedFields}
+              values={options}
+              onChange={setOption}
             />
-            Move originals to the Trash after converting
-            {trashOriginals && <span className="changed"> · changed</span>}
-          </label>
-          <div className="output-row">
-            <span className="option-label">Auto-convert</span>
-            <span className="output-path">
-              {watch?.toolId === tool.id
-                ? `New files in ${basename(watch.folder)}`
-                : 'Off'}
-            </span>
-            <button
-              className="ghost"
-              title="Convert new files that appear in a folder, e.g. screen recordings on your Desktop"
-              onClick={async () => {
-                const folder = await api.pickFolder();
-                if (!folder) return;
-                const target = { toolId: tool.id, folder };
-                await api.setWatch(target);
-                setWatchState(target);
-              }}
-            >
-              Watch a folder…
-            </button>
-          </div>
+            <label className="trash-row">
+              <input
+                type="checkbox"
+                className="toggle"
+                checked={trashOriginals}
+                onChange={(e) => setTrashOriginals(e.target.checked)}
+              />
+              Move originals to the Trash after converting
+            </label>
+            <div className="output-row">
+              <span className="option-label">Auto-convert</span>
+              <span className="output-path">
+                {watch?.toolId === tool.id
+                  ? `New files in ${basename(watch.folder)}`
+                  : 'Off'}
+              </span>
+              <button
+                className="ghost"
+                title="Convert new files that appear in a folder, e.g. screen recordings on your Desktop"
+                onClick={async () => {
+                  const folder = await api.pickFolder();
+                  if (!folder) return;
+                  const target = { toolId: tool.id, folder };
+                  await api.setWatch(target);
+                  setWatchState(target);
+                }}
+              >
+                Watch a folder…
+              </button>
+            </div>
+          </details>
+          <button
+            className="ghost restore"
+            disabled={isDefault}
+            title={
+              isDefault
+                ? 'Already using the default settings'
+                : 'Undo all changes to these settings'
+            }
+            onClick={() => {
+              setOptionsByTool(({ [tool.id]: _removed, ...rest }) => rest);
+              setOutputDir(null);
+              setTrashOriginals(false);
+            }}
+          >
+            Restore defaults
+          </button>
         </section>
 
-        <DropZone
-          extensions={tool.inputExtensions}
-          onFiles={addFiles}
-          compact={pending.length > 0 || toolJobs.length > 0}
-        />
-        {notice && <p className="notice">{notice}</p>}
-
-        {(pending.length > 0 || hasFinished) && (
-          <div className="actions">
-            {finished.length > 0 && (
-              <span className="summary">
-                {finished.length} done · {formatBytes(totalIn)} →{' '}
-                {formatBytes(totalOut)}
+        <section className="panel files-panel" aria-label="Files">
+          {watch && (
+            <div className="watch-banner" role="status">
+              <span>
+                Watching <strong>{basename(watch.folder)}</strong>: new files
+                are converted with{' '}
+                <strong>
+                  {tools.find((t) => t.id === watch.toolId)?.name ??
+                    watch.toolId}
+                </strong>{' '}
+                using its saved settings.
               </span>
-            )}
-            {pending.length > 0 && (
-              <span className="summary">
-                {finished.length > 0 && ' · '}
-                {pending.length} waiting
-              </span>
-            )}
-            <span className="spacer" />
-            {hasFinished && (
               <button
                 className="ghost"
                 onClick={async () => {
-                  await api.clearFinished();
-                  setJobs(
-                    new Map((await api.listJobs()).map((j) => [j.id, j])),
-                  );
+                  await api.setWatch(null);
+                  setWatchState(null);
                 }}
               >
-                Clear finished
+                Stop
               </button>
-            )}
-            {pending.length > 0 && (
-              <button className="primary" onClick={start}>
-                Convert {pending.length} file{pending.length > 1 ? 's' : ''}
-              </button>
-            )}
-          </div>
-        )}
+            </div>
+          )}
+          <FileList
+            pending={pending}
+            jobs={toolJobs}
+            onRemovePending={(p) => {
+              setPending((prev) => prev.filter((x) => x !== p));
+              setTrims(({ [p]: _removed, ...rest }) => rest);
+            }}
+            trims={tool.supportsTrim ? trims : undefined}
+            onTrimChange={
+              tool.supportsTrim
+                ? (p, t) =>
+                    setTrims(({ [p]: _old, ...rest }) =>
+                      t ? { ...rest, [p]: t } : rest,
+                    )
+                : undefined
+            }
+          />
+          <DropZone
+            kind={tool.kind}
+            extensions={tool.inputExtensions}
+            onFiles={addFiles}
+            compact={hasFiles}
+          />
+          {notice && <p className="notice">{notice}</p>}
 
-        <FileList
-          pending={pending}
-          jobs={toolJobs}
-          onRemovePending={(p) => {
-            setPending((prev) => prev.filter((x) => x !== p));
-            setTrims(({ [p]: _removed, ...rest }) => rest);
-          }}
-          trims={tool.supportsTrim ? trims : undefined}
-          onTrimChange={
-            tool.supportsTrim
-              ? (p, t) =>
-                  setTrims(({ [p]: _old, ...rest }) =>
-                    t ? { ...rest, [p]: t } : rest,
-                  )
-              : undefined
-          }
-        />
-      </main>
+          {(pending.length > 0 || hasFinished) && (
+            <div className="actions">
+              {finished.length > 0 && (
+                <span className="summary">
+                  {finished.length} done · {formatBytes(totalIn)} →{' '}
+                  {formatBytes(totalOut)}
+                </span>
+              )}
+              {pending.length > 0 && (
+                <span className="summary">
+                  {finished.length > 0 && ' · '}
+                  {pending.length} waiting
+                </span>
+              )}
+              <span className="spacer" />
+              {hasFinished && (
+                <button
+                  className="ghost"
+                  onClick={async () => {
+                    await api.clearFinished();
+                    setJobs(
+                      new Map((await api.listJobs()).map((j) => [j.id, j])),
+                    );
+                  }}
+                >
+                  Clear finished
+                </button>
+              )}
+              {pending.length > 0 && (
+                <button className="primary" onClick={start}>
+                  Convert {pending.length} file{pending.length > 1 ? 's' : ''}
+                </button>
+              )}
+            </div>
+          )}
+        </section>
+      </div>
     </div>
   );
 }

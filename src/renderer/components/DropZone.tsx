@@ -1,13 +1,21 @@
 import { useState } from 'react';
+import type { MediaKind } from '../../shared/types';
+
+const NOUN: Record<MediaKind, string> = {
+  video: 'videos',
+  audio: 'audio files',
+  image: 'images',
+};
 
 interface Props {
+  kind: MediaKind;
   extensions: string[];
   onFiles(paths: string[]): void;
   /** Smaller once files are listed, so the list stays in view. */
   compact?: boolean;
 }
 
-export function DropZone({ extensions, onFiles, compact }: Props) {
+export function DropZone({ kind, extensions, onFiles, compact }: Props) {
   const [over, setOver] = useState(false);
 
   const browse = async () => {
@@ -37,8 +45,14 @@ export function DropZone({ extensions, onFiles, compact }: Props) {
       <svg viewBox="0 0 24 24" aria-hidden>
         <path d="M12 16V4m0 0L7 9m5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" />
       </svg>
-      <strong>Drop files here or click to choose</strong>
-      <span>{extensions.map((e) => `.${e}`).join('  ')}</span>
+      <strong>
+        {compact ? `Add more ${NOUN[kind]}` : `Drop ${NOUN[kind]} here`}
+      </strong>
+      <span>
+        {compact
+          ? 'Drop or click to choose'
+          : `or click to choose · ${extensions.map((e) => `.${e}`).join(' ')}`}
+      </span>
     </button>
   );
 }
