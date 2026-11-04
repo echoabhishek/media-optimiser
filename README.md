@@ -42,6 +42,7 @@ media-optimiser mov-to-mp4 --help          # a tool's options
 media-optimiser mov-to-mp4 ~/Downloads/*.mov --codec h265 --resolution 1080 --out ~/Desktop
 ```
 
+Add `--json` to print a machine-readable result instead of progress lines.
 Exit codes: `0` success, `1` a file failed, `2` usage error, `130` cancelled (Ctrl+C).
 In development: `npm start -- -- mov-to-mp4 file.mov`.
 

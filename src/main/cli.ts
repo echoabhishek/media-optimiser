@@ -117,6 +117,7 @@ function toolHelpText(tool: ToolDefinition): string {
   rows.push(
     ['--out <dir>', 'Output folder (default: next to each input file)'],
     ['--trash-originals', 'Move each original to the Trash once converted'],
+    ['--json', 'Print results as JSON (for scripts)'],
   );
   const advanced = tool.options.filter((f) => f.advanced).map(toRow);
   const width =
@@ -171,6 +172,7 @@ export function parseToolArgs(tool: ToolDefinition, args: string[]) {
   let outDir: string | undefined;
   let preset: ToolPreset | undefined;
   let trashOriginals = false;
+  let json = false;
   let start: number | undefined;
   let end: number | undefined;
 
@@ -195,6 +197,10 @@ export function parseToolArgs(tool: ToolDefinition, args: string[]) {
           `Unknown preset "${id}". Use one of: ${(tool.presets ?? []).map((p) => p.id).join(', ')}`,
         );
       }
+      continue;
+    }
+    if (rawKey === 'json') {
+      json = true;
       continue;
     }
     if (rawKey === 'trash-originals') {
@@ -271,6 +277,7 @@ export function parseToolArgs(tool: ToolDefinition, args: string[]) {
     outDir,
     trim,
     trashOriginals,
+    json,
   };
 }
 
@@ -282,10 +289,12 @@ async function convert(
     outDir,
     trim,
     trashOriginals,
+    json,
   }: ReturnType<typeof parseToolArgs>,
 ): Promise<number> {
   const runner = new JobRunner();
-  const tty = process.stdout.isTTY;
+  const tty = process.stdout.isTTY && !json;
+  const results: JobState[] = [];
   let remaining = files.length;
   let failed = 0;
 
@@ -309,6 +318,12 @@ async function convert(
       }
       if (job.status === 'queued') return;
 
+      if (json) {
+        results.push(job);
+        if (job.status !== 'done') failed++;
+        if (--remaining === 0) resolve();
+        return;
+      }
       if (tty) process.stdout.write('\r\x1b[K');
       if (job.status === 'done') {
         const out = job.outputBytes ?? 0;
@@ -338,5 +353,18 @@ async function convert(
     })),
   );
   await finished;
+  if (json) {
+    const files = results.map((j) => ({
+      input: j.inputPath,
+      output: j.status === 'done' ? j.outputPath : undefined,
+      status: j.status,
+      inputBytes: j.inputBytes,
+      outputBytes: j.outputBytes,
+      quality: j.quality,
+      originalTrashed: j.originalTrashed,
+      error: j.error,
+    }));
+    console.log(JSON.stringify({ ok: failed === 0, files }, null, 2));
+  }
   return failed ? 1 : 0;
 }
