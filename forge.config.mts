@@ -29,6 +29,8 @@ const windowsSigning = env.WINDOWS_CERT_FILE
     }
   : {};
 
+const ffmpegBinary = `node_modules/ffmpeg-static/ffmpeg${process.platform === 'win32' ? '.exe' : ''}`;
+
 /**
  * The Vite build bundles all JS, but native modules can't be bundled. Copy
  * sharp, its JS dependencies and only the target platform's binaries.
@@ -67,7 +69,7 @@ const config: ForgeConfig = {
       // Windows bundles libvips inside this package; others add sharp-libvips-*.
       if (!packages.includes(`@img/sharp-${platform}-${arch}`)) {
         throw new Error(
-          `sharp binaries for ${platform}-${arch} are missing. Install with npm_config_cpu=${arch} (see docs/development.md).`,
+          `sharp binaries for ${platform}-${arch} are missing. Run npm install on a ${platform}-${arch} machine (see docs/development.md).`,
         );
       }
       for (const name of packages) {
@@ -101,12 +103,8 @@ const config: ForgeConfig = {
     ...macSigning,
     // ffmpeg ships next to the app (not inside asar) so it can be executed.
     // ffmpeg-static downloads the binary for the platform you build on, so
-    // build each OS on that OS (or in CI) - see README.
-    extraResource: [
-      `node_modules/ffmpeg-static/ffmpeg${process.platform === 'win32' ? '.exe' : ''}`,
-      'node_modules/ffmpeg-static/ffmpeg.LICENSE',
-      'assets/icon.png',
-    ],
+    // build each OS on that OS (or in CI) - see docs/development.md.
+    extraResource: [ffmpegBinary, `${ffmpegBinary}.LICENSE`, 'assets/icon.png'],
   },
   rebuildConfig: {},
   makers: [

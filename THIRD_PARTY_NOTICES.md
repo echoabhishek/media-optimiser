@@ -6,7 +6,7 @@ Media Optimiser's own code is under the [MIT licence](LICENSE). The installers a
 
 Video and audio processing uses a separate FFmpeg executable that ships inside the app and runs as its own process.
 
-- **Licence:** the bundled build is configured with `--enable-gpl --enable-version3` and includes libx264 and libx265, so the binary as a whole is licensed under the **GNU General Public License v3**. Its licence text ships with the app as `ffmpeg.LICENSE` (in the app's resources folder).
+- **Licence:** the bundled build is configured with `--enable-gpl --enable-version3` and includes libx264 and libx265, so the binary as a whole is licensed under the **GNU General Public License v3**. Its licence text ships with the app as `ffmpeg.LICENSE` (`ffmpeg.exe.LICENSE` on Windows) (in the app's resources folder).
 - **Source:** binaries come from the [`ffmpeg-static`](https://github.com/eugeneware/ffmpeg-static) project (release `b6.1.1`), which takes them from:
   - macOS: [evermeet.cx](https://evermeet.cx/ffmpeg/) (Intel) and [osxexperts.net](https://osxexperts.net/) (Apple Silicon)
   - Windows: [gyan.dev](https://www.gyan.dev/ffmpeg/builds/)

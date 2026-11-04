@@ -92,7 +92,7 @@ npm run make
 | Windows | Squirrel `Setup.exe`                    |
 | Linux   | `.deb` and `.rpm`                       |
 
-`ffmpeg-static` and sharp download binaries for the OS you install on, so **build each OS on that OS**. For an Intel Mac build on Apple Silicon, install with `npm_config_arch=x64 npm_config_cpu=x64 npm ci` first.
+`ffmpeg-static` and sharp download binaries for the OS you install on, so **build each OS and CPU on a matching machine** (CI uses an Intel runner for Intel Macs).
 
 sharp is a native module, so Vite doesn't bundle it. The `packageAfterCopy` hook in `forge.config.mts` copies sharp, its JavaScript dependencies and only the target platform's `@img/*` binaries into the app, outside the asar archive.
 
