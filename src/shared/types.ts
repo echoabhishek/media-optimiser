@@ -93,6 +93,8 @@ export interface JobState {
   inputBytes: number;
   outputBytes?: number;
   error?: string;
+  /** Full report for "Copy error details" (versions, options, ffmpeg output). */
+  errorDetails?: string;
   startedAt?: number;
   finishedAt?: number;
 }

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { JobState } from '../../shared/types';
 import { basename, formatBytes, formatDuration } from '../../shared/format';
 
@@ -49,6 +50,9 @@ export function FileList({ pending, jobs, onRemovePending }: Props) {
                   Show in folder
                 </button>
               </>
+            )}
+            {job.status === 'error' && job.errorDetails && (
+              <CopyButton text={job.errorDetails} />
             )}
           </div>
         </li>
@@ -116,10 +120,26 @@ function JobDetail({ job }: { job: JobState }) {
     case 'error':
       return (
         <span className="file-detail error-text" title={job.error}>
-          Failed: {job.error?.split('\n').pop()}
+          Failed: {job.error}
         </span>
       );
     case 'cancelled':
       return <span className="file-detail muted">Cancelled</span>;
   }
+}
+
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      className="ghost"
+      onClick={async () => {
+        await window.mediaApi.copyText(text);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
+      }}
+    >
+      {copied ? 'Copied' : 'Copy error details'}
+    </button>
+  );
 }

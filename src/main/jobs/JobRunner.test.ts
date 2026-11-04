@@ -8,7 +8,12 @@ import { JobRunner, uniqueOutputPath } from './JobRunner';
 
 // Real ffmpeg from ffmpeg-static (resolved via app.getAppPath() in dev mode).
 vi.mock('electron', () => ({
-  app: { isPackaged: false, getAppPath: () => process.cwd() },
+  app: {
+    isPackaged: false,
+    getAppPath: () => process.cwd(),
+    getVersion: () => '0.0.0-test',
+    getPath: () => path.join(os.tmpdir(), 'mo-test-logs'),
+  },
 }));
 
 const ffmpegBin = path.join(
@@ -117,5 +122,18 @@ describe('JobRunner (real ffmpeg)', () => {
     expect(fs.readdirSync(dir).filter((f) => f.startsWith('long.mp4'))).toEqual(
       [],
     );
+  });
+
+  it('reports a readable error and full details for a broken file', async () => {
+    const input = path.join(dir, 'broken.mov');
+    fs.writeFileSync(input, 'not a video');
+    const job = await runJob(new JobRunner(), input);
+    expect(job.status).toBe('error');
+    expect(job.error).not.toBe('Conversion failed!');
+    expect(job.errorDetails).toContain('Tool: video.mov-to-mp4');
+    expect(job.errorDetails).toContain(`Input: ${input}`);
+    expect(
+      fs.readdirSync(dir).filter((f) => f.startsWith('broken.mp4')),
+    ).toEqual([]);
   });
 });

@@ -14,6 +14,7 @@ export const IPC = {
   jobUpdate: 'jobs:update',
   revealPath: 'shell:reveal',
   openPath: 'shell:open',
+  copyText: 'clipboard:write',
 } as const;
 
 /** The API the preload script exposes on `window.mediaApi`. */
@@ -34,4 +35,5 @@ export interface MediaApi {
   onJobUpdate(listener: (job: JobState) => void): () => void;
   revealPath(path: string): Promise<void>;
   openPath(path: string): Promise<void>;
+  copyText(text: string): Promise<void>;
 }

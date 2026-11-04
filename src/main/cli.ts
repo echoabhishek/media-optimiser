@@ -6,6 +6,7 @@ import type { JobState, OptionField, OptionValues } from '../shared/types';
 import { tools } from '../tools';
 import type { ToolDefinition } from '../tools/types';
 import { JobRunner } from './jobs/JobRunner';
+import { logPath } from './log';
 
 const BIN = 'media-optimiser';
 
@@ -245,6 +246,7 @@ async function convert(
         console.error(
           `✗ ${label}  ${job.status === 'error' ? job.error : 'cancelled'}`,
         );
+        if (job.status === 'error') console.error(`  Details: ${logPath()}`);
       }
       if (--remaining === 0) resolve();
     });

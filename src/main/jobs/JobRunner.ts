@@ -1,3 +1,4 @@
+import { app } from 'electron';
 import { randomUUID } from 'node:crypto';
 import { EventEmitter } from 'node:events';
 import { rmSync } from 'node:fs';
@@ -6,8 +7,9 @@ import path from 'node:path';
 import { getTool } from '../../tools';
 import { resolveOptions } from '../../shared/options';
 import type { JobRequest, JobState } from '../../shared/types';
-import { AbortError } from '../engines/ffmpeg';
+import { AbortError, FfmpegError } from '../engines/ffmpeg';
 import { getEngines } from '../engines';
+import { log, logPath } from '../log';
 
 interface Job {
   state: JobState;
@@ -114,12 +116,17 @@ export class JobRunner extends EventEmitter<{ update: [JobState] }> {
     job.tempPath = tempPath;
     this.update(job, { status: 'running', outputPath, startedAt: Date.now() });
 
+    const options = resolveOptions(tool.options, job.request.options);
+    log(
+      'info',
+      `start ${tool.id} ${job.request.inputPath} ${JSON.stringify(options)}`,
+    );
     let lastEmit = 0;
     try {
       await tool.run({
         inputPath: job.request.inputPath,
         outputPath: tempPath,
-        options: resolveOptions(tool.options, job.request.options),
+        options,
         engines: getEngines(),
         signal: job.abort.signal,
         onProgress: (p) => {
@@ -132,6 +139,10 @@ export class JobRunner extends EventEmitter<{ update: [JobState] }> {
       await fs.rename(tempPath, outputPath);
       job.tempPath = undefined;
       const { size } = await fs.stat(outputPath);
+      log(
+        'info',
+        `done ${outputPath} ${job.state.inputBytes} -> ${size} bytes`,
+      );
       this.update(job, {
         status: 'done',
         progress: 1,
@@ -142,9 +153,29 @@ export class JobRunner extends EventEmitter<{ update: [JobState] }> {
       await fs.rm(tempPath, { force: true });
       job.tempPath = undefined;
       const cancelled = err instanceof AbortError || job.abort.signal.aborted;
+      if (cancelled) {
+        log('info', `cancelled ${job.request.inputPath}`);
+        this.update(job, { status: 'cancelled', finishedAt: Date.now() });
+        return;
+      }
+      const message = (err as Error).message;
+      const errorDetails = [
+        `Media Optimiser ${app.getVersion()} · ${process.platform} ${process.arch}`,
+        `Tool: ${tool.id}`,
+        `Input: ${job.request.inputPath}`,
+        `Options: ${JSON.stringify(options)}`,
+        `Error: ${message}`,
+        ...(err instanceof FfmpegError
+          ? ['', '--- ffmpeg output ---', err.details]
+          : []),
+        '',
+        `Log: ${logPath()}`,
+      ].join('\n');
+      log('error', errorDetails);
       this.update(job, {
-        status: cancelled ? 'cancelled' : 'error',
-        error: cancelled ? undefined : (err as Error).message,
+        status: 'error',
+        error: message,
+        errorDetails,
         finishedAt: Date.now(),
       });
     }

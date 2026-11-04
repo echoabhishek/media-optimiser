@@ -15,6 +15,17 @@ export interface RunOptions {
   onProgress?: (fraction: number) => void;
 }
 
+/** ffmpeg failure: a one-line `message` for the UI plus the output tail. */
+export class FfmpegError extends Error {
+  constructor(
+    message: string,
+    readonly details: string,
+  ) {
+    super(message);
+    this.name = 'FfmpegError';
+  }
+}
+
 export class AbortError extends Error {
   constructor() {
     super('Cancelled');
@@ -105,12 +116,23 @@ export class FfmpegEngine {
         opts.signal?.removeEventListener('abort', onAbort);
         if (opts.signal?.aborted) return reject(new AbortError());
         if (code === 0 || opts.allowFailure) return resolve({ stderr });
-        reject(new Error(lastErrorLines(stderr) || `ffmpeg exited ${code}`));
+        reject(
+          new FfmpegError(
+            summarise(stderr) || `ffmpeg exited with code ${code}`,
+            stderr.trim().split('\n').slice(-40).join('\n'),
+          ),
+        );
       });
     });
   }
 }
 
-function lastErrorLines(stderr: string): string {
-  return stderr.trim().split('\n').slice(-4).join('\n');
+/** The most useful line: the last one that isn't ffmpeg's generic footer. */
+function summarise(stderr: string): string {
+  const lines = stderr
+    .trim()
+    .split('\n')
+    .map((l) => l.trim())
+    .filter((l) => l && l !== 'Conversion failed!');
+  return lines.at(-1) ?? '';
 }
