@@ -81,27 +81,30 @@ export class FfmpegEngine {
   async ssim(
     output: string,
     reference: string,
-    seconds = 10,
+    /** How much to compare; null for still images. */
+    seconds: number | null = 10,
     signal?: AbortSignal,
     /** Where the output starts within the reference (after a trim). */
     referenceOffset = 0,
   ): Promise<number | null> {
+    const limit = seconds == null ? [] : ['-t', String(seconds)];
+    const offset = referenceOffset ? ['-ss', String(referenceOffset)] : [];
     const { stderr } = await this.exec(
       [
         '-hide_banner',
         '-nostdin',
-        '-t',
-        String(seconds),
+        ...limit,
         '-i',
         output,
-        '-ss',
-        String(referenceOffset),
-        '-t',
-        String(seconds),
+        ...offset,
+        ...limit,
         '-i',
         reference,
+        // Luma only: chroma subsampling and colour range differences would
+        // otherwise dominate the score without being visible.
         '-lavfi',
-        '[1:v][0:v]scale2ref=flags=bicubic[ref][out];[out][ref]ssim',
+        '[1:v][0:v]scale2ref=flags=bicubic[ref][out];' +
+          '[ref]format=gray[r];[out]format=gray[o];[o][r]ssim',
         '-f',
         'null',
         '-',

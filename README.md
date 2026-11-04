@@ -90,20 +90,20 @@ For a new back-end (e.g. `sharp` for images), add it to `Engines` in
 
 ## MOV to MP4: encoding choices
 
-| Setting          | What it does                                                                                                                   |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| H.264 (default)  | libx264, CRF 19/23/28 for High/Balanced/Smallest. Plays everywhere.                                                            |
-| H.265 / HEVC     | libx265, CRF 22/26/31, tagged `hvc1` so QuickTime/Safari play it. Often smaller on long/busy video, about 8× slower to encode. |
-| Screen recording | `-tune stillimage` (sharp text, still frames); Camera uses `-tune film`                                                        |
-| Max resolution   | Downscales only if larger (Lanczos), keeps aspect ratio                                                                        |
-| Size limit       | CRF encode first; only if the result is too big, a two-pass encode at the bitrate that fits (fails clearly if under ~100 kbps) |
-| Max frame rate   | `-fpsmax`: caps the rate, never increases it                                                                                   |
-| Metadata         | Location and device info removed by default, creation date kept; advanced toggle keeps everything                              |
-| Trim             | Per file: "Trim" on a waiting file opens a preview with start/end handles. CLI: `--start` / `--end` (seconds or m:ss)          |
-| Quality score    | SSIM of the result vs the original over the first 10 s, shown as "99.9% match"; skipped when the frame rate is capped          |
-| Presets          | Standard, Chat, GitHub (10 MB), Email (25 MB), Best quality. Also available on the command line as `--preset <id>`             |
-| Audio            | AAC 160k/256k, or removed. Skipped automatically if the source has none                                                        |
-| Always           | `yuv420p`, `+faststart` (web streaming), metadata copied, only the first video track (drops QuickTime timecode tracks)         |
+| Setting          | What it does                                                                                                                                                                                  |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| H.264 (default)  | libx264, CRF 19/23/28 for High/Balanced/Smallest. Plays everywhere.                                                                                                                           |
+| H.265 / HEVC     | libx265, CRF 22/26/31, tagged `hvc1` so QuickTime/Safari play it. Often smaller on long/busy video, about 8× slower to encode.                                                                |
+| Screen recording | `-tune stillimage` (sharp text, still frames); Camera uses `-tune film`                                                                                                                       |
+| Max resolution   | Downscales only if larger (Lanczos), keeps aspect ratio                                                                                                                                       |
+| Size limit       | CRF encode first; only if the result is too big, a two-pass encode at the bitrate that fits (fails clearly if under ~100 kbps)                                                                |
+| Max frame rate   | `-fpsmax`: caps the rate, never increases it                                                                                                                                                  |
+| Metadata         | Location and device info removed by default, creation date kept; advanced toggle keeps everything                                                                                             |
+| Trim             | Per file: "Trim" on a waiting file opens a preview with start/end handles. CLI: `--start` / `--end` (seconds or m:ss)                                                                         |
+| Quality score    | Luma SSIM vs the original (first 10 s for video), shown as "99.8% match". Images compare against a lossless render of the same rotate/resize/colour pipeline, so only compression loss counts |
+| Presets          | Standard, Chat, GitHub (10 MB), Email (25 MB), Best quality. Also available on the command line as `--preset <id>`                                                                            |
+| Audio            | AAC 160k/256k, or removed. Skipped automatically if the source has none                                                                                                                       |
+| Always           | `yuv420p`, `+faststart` (web streaming), metadata copied, only the first video track (drops QuickTime timecode tracks)                                                                        |
 
 Outputs are written as `name.mp4.part.mp4`, then renamed when complete, so a cancelled job never leaves a broken file.
 Existing files are never overwritten: if `name.mp4` exists, the output becomes `name (optimised).mp4`.

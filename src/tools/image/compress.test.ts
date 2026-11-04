@@ -137,7 +137,7 @@ describe('compress images (real sharp)', () => {
     },
   );
 
-  it('reports visual similarity for upright images only', async () => {
+  it('reports visual similarity, including rotated photos', async () => {
     const run = (input: string) =>
       compressImages.run({
         inputPath: input,
@@ -150,8 +150,8 @@ describe('compress images (real sharp)', () => {
         signal: new AbortController().signal,
         onProgress: () => {},
       });
-    const logoResult = await run(logo);
-    expect(logoResult?.quality).toBeGreaterThan(0.95);
-    expect((await run(photo))?.quality).toBeUndefined(); // EXIF-rotated
+    expect((await run(logo))?.quality).toBeGreaterThan(0.95);
+    // EXIF-rotated: compared against an equally rotated reference.
+    expect((await run(photo))?.quality).toBeGreaterThan(0.9);
   });
 });

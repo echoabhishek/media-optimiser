@@ -1,12 +1,13 @@
 import { app } from 'electron';
 import { randomUUID } from 'node:crypto';
+import os from 'node:os';
 import { EventEmitter } from 'node:events';
 import { rmSync } from 'node:fs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { getTool } from '../../tools';
 import { resolveOptions } from '../../shared/options';
-import type { JobRequest, JobState } from '../../shared/types';
+import type { JobRequest, JobState, MediaKind } from '../../shared/types';
 import { AbortError, FfmpegError } from '../engines/ffmpeg';
 import { getEngines } from '../engines';
 import { log, logPath } from '../log';
@@ -17,19 +18,25 @@ interface Job {
   abort: AbortController;
   /** Set while encoding; deleted if the job doesn't finish. */
   tempPath?: string;
+  started?: boolean;
 }
 
 /**
- * FIFO queue. Runs one job at a time by default: video encoders already
- * use every CPU core, so parallel jobs just compete with each other.
+ * Parallel jobs per media kind. Video encoders already use every core, so
+ * video runs one at a time; image jobs are short and mostly single-threaded.
  */
+const LIMITS: Record<MediaKind, number> = {
+  video: 1,
+  audio: 2,
+  image: Math.max(2, Math.floor(os.cpus().length / 2)),
+};
+
+/** FIFO queue with a concurrency limit per media kind. */
 export class JobRunner extends EventEmitter<{ update: [JobState] }> {
   private jobs = new Map<string, Job>();
-  private running = 0;
-
-  constructor(private readonly concurrency = 1) {
-    super();
-  }
+  private running = new Map<MediaKind, number>();
+  /** Output paths claimed by active jobs, so parallel jobs never collide. */
+  private reserved = new Set<string>();
 
   async enqueue(requests: JobRequest[]): Promise<JobState[]> {
     const added: JobState[] = [];
@@ -91,14 +98,15 @@ export class JobRunner extends EventEmitter<{ update: [JobState] }> {
   }
 
   private pump(): void {
-    while (this.running < this.concurrency) {
-      const next = [...this.jobs.values()].find(
-        (j) => j.state.status === 'queued',
-      );
-      if (!next) return;
-      this.running++;
-      void this.execute(next).finally(() => {
-        this.running--;
+    for (const job of this.jobs.values()) {
+      if (job.started || job.state.status !== 'queued') continue;
+      const kind = getTool(job.request.toolId)!.kind;
+      const active = this.running.get(kind) ?? 0;
+      if (active >= LIMITS[kind]) continue;
+      job.started = true;
+      this.running.set(kind, active + 1);
+      void this.execute(job).finally(() => {
+        this.running.set(kind, (this.running.get(kind) ?? 1) - 1);
         this.pump();
       });
     }
@@ -114,6 +122,7 @@ export class JobRunner extends EventEmitter<{ update: [JobState] }> {
       job.request.inputPath,
       ext,
       job.request.outputDir,
+      this.reserved,
     );
     // Encode to a temp name, rename when complete: no half-written files.
     const tempPath = `${outputPath}.part.${ext}`;
@@ -183,6 +192,8 @@ export class JobRunner extends EventEmitter<{ update: [JobState] }> {
         errorDetails,
         finishedAt: Date.now(),
       });
+    } finally {
+      this.reserved.delete(outputPath);
     }
   }
 
@@ -197,6 +208,8 @@ export async function uniqueOutputPath(
   inputPath: string,
   ext: string,
   outputDir?: string,
+  /** Paths already claimed; the chosen path is added to it. */
+  reserved = new Set<string>(),
 ): Promise<string> {
   const dir = outputDir ?? path.dirname(inputPath);
   const base = path.basename(inputPath, path.extname(inputPath));
@@ -206,9 +219,13 @@ export async function uniqueOutputPath(
   for (const name of candidates) {
     const p = path.join(dir, name);
     if (path.resolve(p) === path.resolve(inputPath)) continue;
+    if (reserved.has(p)) continue;
     try {
       await fs.access(p);
     } catch {
+      // Re-check after the await: another job may have claimed it meanwhile.
+      if (reserved.has(p)) continue;
+      reserved.add(p);
       return p;
     }
   }

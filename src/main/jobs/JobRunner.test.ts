@@ -137,3 +137,16 @@ describe('JobRunner (real ffmpeg)', () => {
     ).toEqual([]);
   });
 });
+
+describe('JobRunner parallel naming', () => {
+  it('gives parallel jobs distinct output names', async () => {
+    const reserved = new Set<string>();
+    const input = path.join(dir, 'same.mov');
+    const [a, b] = await Promise.all([
+      uniqueOutputPath(input, 'webp', undefined, reserved),
+      uniqueOutputPath(path.join(dir, 'same.png'), 'webp', undefined, reserved),
+    ]);
+    expect(a).not.toBe(b);
+    expect(reserved).toEqual(new Set([a, b]));
+  });
+});

@@ -1,5 +1,4 @@
 import { execFile } from 'node:child_process';
-import { randomUUID } from 'node:crypto';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -152,7 +151,8 @@ export const compressImages: ToolDefinition = {
   async run({ inputPath, outputPath, options, engines, signal, onProgress }) {
     const sharp = await engines.loadSharp();
     const inExt = extOf(inputPath);
-    const tmp = HEIC.includes(inExt) ? await heicToPng(inputPath) : null;
+    const work = await fs.mkdtemp(path.join(os.tmpdir(), 'media-optimiser-'));
+    const tmp = HEIC.includes(inExt) ? await heicToPng(inputPath, work) : null;
     try {
       const source = tmp ?? inputPath;
       const meta = await sharp(source).metadata();
@@ -173,6 +173,8 @@ export const compressImages: ToolDefinition = {
       img = options.keepMetadata ? img.keepMetadata() : img.keepIccProfile();
       if (format === 'jpeg' && meta.hasAlpha)
         img = img.flatten({ background: '#ffffff' });
+      // Cloned before any output encoding options are applied.
+      const lossless = img.clone().png({ compressionLevel: 1 });
 
       if (format === 'jpeg') img = img.jpeg({ quality: q.jpeg, mozjpeg: true });
       else if (format === 'webp')
@@ -191,6 +193,10 @@ export const compressImages: ToolDefinition = {
         });
 
       await img.toFile(outputPath);
+      // Same pipeline, losslessly: the fair reference for the quality score
+      // (already rotated, resized and colour-converted like the output).
+      const reference = path.join(work, 'reference.png');
+      await lossless.toFile(reference);
 
       // Re-saving in the same format at full size can grow already-optimised
       // files; never hand back something bigger than the original.
@@ -202,19 +208,21 @@ export const compressImages: ToolDefinition = {
           fs.stat(inputPath),
           fs.stat(outputPath),
         ]);
-        if (outSize.size >= inSize.size)
+        if (outSize.size >= inSize.size) {
           await fs.copyFile(inputPath, outputPath);
+          return { quality: 1 };
+        }
       }
       onProgress(1);
-
-      // ffmpeg ignores EXIF rotation, so only compare unrotated images.
-      const upright = (meta.orientation ?? 1) === 1;
-      const quality = upright
-        ? await engines.ffmpeg.ssim(outputPath, source, 1, signal)
-        : null;
+      const quality = await engines.ffmpeg.ssim(
+        outputPath,
+        reference,
+        null,
+        signal,
+      );
       return { quality: quality ?? undefined };
     } finally {
-      if (tmp) await fs.rm(path.dirname(tmp), { recursive: true, force: true });
+      await fs.rm(work, { recursive: true, force: true });
     }
   },
 };
@@ -236,15 +244,12 @@ function formatFor(ext: string): 'jpeg' | 'webp' | 'avif' | 'png' | 'tiff' {
  * sharp's prebuilt libvips can't decode HEIC (patent-encumbered HEVC), so
  * on macOS we convert with the built-in `sips` first.
  */
-async function heicToPng(inputPath: string): Promise<string> {
+async function heicToPng(inputPath: string, dir: string): Promise<string> {
   if (process.platform !== 'darwin') {
     throw new Error(
       'HEIC photos can only be converted on macOS. Export them as JPEG first.',
     );
   }
-  const dir = await fs.mkdtemp(
-    path.join(os.tmpdir(), `media-optimiser-${randomUUID()}`),
-  );
   const out = path.join(dir, 'image.png');
   await promisify(execFile)('sips', [
     '-s',
