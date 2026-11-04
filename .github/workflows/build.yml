@@ -19,8 +19,10 @@ jobs:
           - { os: ubuntu-latest, arch: x64 }
     runs-on: ${{ matrix.os }}
     env:
-      # Makes ffmpeg-static download the binary for the target architecture.
+      # Makes ffmpeg-static (arch) and sharp's optional deps (cpu) install the
+      # binaries for the target architecture.
       npm_config_arch: ${{ matrix.arch }}
+      npm_config_cpu: ${{ matrix.arch }}
       # Signing activates only when these secrets are set (see README).
       APPLE_ID: ${{ secrets.APPLE_ID }}
       APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}

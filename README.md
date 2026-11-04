@@ -3,7 +3,7 @@
 A cross-platform desktop app (macOS, Windows, Linux) for converting and optimising media.
 Built with Electron Forge + Vite + React + TypeScript, with ffmpeg bundled. Users don't need to install anything.
 
-**Tools:** Video › MOV to MP4, Video to GIF · Audio › Convert audio (incl. extracting from video), Normalise loudness (EBU R128), Clean up recording. Image tools are planned.
+**Tools:** Video › MOV to MP4, Video to GIF · Audio › Convert audio (incl. extracting from video), Normalise loudness (EBU R128), Clean up recording · Image › Compress images (JPEG, WebP, AVIF, PNG; HEIC input on macOS).
 
 ## Develop
 
@@ -107,6 +107,16 @@ For a new back-end (e.g. `sharp` for images), add it to `Engines` in
 
 Outputs are written as `name.mp4.part.mp4`, then renamed when complete, so a cancelled job never leaves a broken file.
 Existing files are never overwritten: if `name.mp4` exists, the output becomes `name (optimised).mp4`.
+
+## Images: how it works
+
+`sharp` (libvips) does the image work. It's a native module, so it isn't bundled by Vite: the forge `packageAfterCopy` hook copies it, its JS dependencies and only the target platform's `@img/*` binaries into the app, and they're left outside the asar archive.
+For an Intel Mac build on Apple Silicon, install with `npm_config_arch=x64 npm_config_cpu=x64 npm ci` (CI does this).
+
+- Photos are rotated upright from EXIF, never enlarged, and transparent images get a white background when saved as JPEG.
+- Location and camera metadata are removed by default; the colour profile is kept.
+- When keeping the format, a result that would be larger than the original is replaced by the original.
+- HEIC (iPhone photos) is decoded with macOS's `sips`; sharp's prebuilt libvips can't read HEIC due to HEVC patents. Other platforms report a clear error.
 
 ## Licensing note
 

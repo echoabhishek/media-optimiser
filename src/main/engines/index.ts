@@ -9,6 +9,8 @@ import { FfmpegEngine } from './ffmpeg';
  */
 export interface Engines {
   ffmpeg: FfmpegEngine;
+  /** Image processing (libvips). Loaded on first use: it's a native module. */
+  loadSharp(): Promise<typeof import('sharp').default>;
 }
 
 const exe = process.platform === 'win32' ? '.exe' : '';
@@ -44,6 +46,9 @@ function resolveFfmpeg(): string {
 let engines: Engines | undefined;
 
 export function getEngines(): Engines {
-  engines ??= { ffmpeg: new FfmpegEngine(resolveFfmpeg()) };
+  engines ??= {
+    ffmpeg: new FfmpegEngine(resolveFfmpeg()),
+    loadSharp: async () => (await import('sharp')).default,
+  };
   return engines;
 }

@@ -6,6 +6,8 @@ import { MakerRpm } from '@electron-forge/maker-rpm';
 import { VitePlugin } from '@electron-forge/plugin-vite';
 import { FusesPlugin } from '@electron-forge/plugin-fuses';
 import { FuseV1Options, FuseVersion } from '@electron/fuses';
+import fs from 'node:fs';
+import path from 'node:path';
 
 const env = process.env;
 
@@ -27,9 +29,40 @@ const windowsSigning = env.WINDOWS_CERT_FILE
     }
   : {};
 
+/**
+ * The Vite build bundles all JS, but native modules can't be bundled. Copy
+ * sharp, its JS dependencies and only the target platform's binaries.
+ */
+function nativePackages(platform: string, arch: string): string[] {
+  const binaries = fs
+    .readdirSync('node_modules/@img')
+    .filter((d) => d.endsWith(`-${platform}-${arch}`))
+    .map((d) => `@img/${d}`);
+  return ['sharp', '@img/colour', 'detect-libc', 'semver', ...binaries];
+}
+
 const config: ForgeConfig = {
+  hooks: {
+    packageAfterCopy: async (_config, buildPath, _electron, platform, arch) => {
+      const packages = nativePackages(platform, arch);
+      // Windows bundles libvips inside this package; others add sharp-libvips-*.
+      if (!packages.includes(`@img/sharp-${platform}-${arch}`)) {
+        throw new Error(
+          `sharp binaries for ${platform}-${arch} are missing. Install with npm_config_cpu=${arch} (see README).`,
+        );
+      }
+      for (const name of packages) {
+        await fs.promises.cp(
+          path.join('node_modules', name),
+          path.join(buildPath, 'node_modules', name),
+          { recursive: true },
+        );
+      }
+    },
+  },
   packagerConfig: {
-    asar: true,
+    // Native code (sharp, libvips) must live outside the asar archive.
+    asar: { unpack: '**/node_modules/{sharp,@img}/**' },
     name: 'Media Optimiser',
     executableName: 'media-optimiser',
     appBundleId: 'com.mediaoptimiser.app',

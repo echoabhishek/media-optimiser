@@ -3,6 +3,7 @@ import type { ToolDefinition } from './types';
 import { cleanupAudio } from './audio/cleanup';
 import { convertAudio } from './audio/convert';
 import { normaliseLoudness } from './audio/normalise';
+import { compressImages } from './image/compress';
 import { movToMp4 } from './video/mov-to-mp4';
 import { toGif } from './video/to-gif';
 
@@ -19,6 +20,7 @@ export const tools: ToolDefinition[] = [
   convertAudio,
   normaliseLoudness,
   cleanupAudio,
+  compressImages,
 ];
 
 export function getTool(id: string): ToolDefinition | undefined {
