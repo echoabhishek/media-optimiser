@@ -124,8 +124,7 @@ describe('JobRunner (real ffmpeg)', () => {
     expect(fs.readdirSync(dir).filter((f) => f.startsWith('long.mp4'))).toEqual(
       [],
     );
-    // Generating the 1080p clip alone takes several seconds on slow CI runners.
-  }, 30_000);
+  });
 
   it('reports a readable error and full details for a broken file', async () => {
     const input = path.join(dir, 'broken.mov');

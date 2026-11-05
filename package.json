@@ -22,7 +22,7 @@
     "lint": "oxlint && oxfmt --check",
     "lint:fix": "oxlint --fix && oxfmt --write",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run --testTimeout=30000"
   },
   "devDependencies": {
     "@electron-forge/cli": "^8.0.1",
