@@ -6,6 +6,7 @@ import { MakerRpm } from '@electron-forge/maker-rpm';
 import { VitePlugin } from '@electron-forge/plugin-vite';
 import { FusesPlugin } from '@electron-forge/plugin-fuses';
 import { FuseV1Options, FuseVersion } from '@electron/fuses';
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -78,6 +79,17 @@ const config: ForgeConfig = {
           path.join(buildPath, 'node_modules', name),
           { recursive: true },
         );
+      }
+    },
+    // Without a certificate, re-apply an ad-hoc signature: packaging edits
+    // Info.plist after Electron was signed, and macOS calls a downloaded app
+    // with a broken signature "damaged" (only offering the Trash).
+    postPackage: async (_config, { platform, outputPaths }) => {
+      if (platform !== 'darwin' || env.APPLE_ID) return;
+      for (const dir of outputPaths) {
+        const app = path.join(dir, 'Media Optimiser.app');
+        execFileSync('codesign', ['--force', '--deep', '--sign', '-', app]);
+        execFileSync('codesign', ['--verify', '--deep', '--strict', app]);
       }
     },
   },

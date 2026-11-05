@@ -111,7 +111,7 @@ Signing turns on automatically when these are set (as repository secrets in CI):
 | macOS signing and notarisation | `APPLE_ID`, `APPLE_APP_PASSWORD` (an app-specific password), `APPLE_TEAM_ID`. A "Developer ID Application" certificate must be in the build machine's keychain. |
 | Windows                        | `WINDOWS_CERT_FILE` (a `.pfx`) and `WINDOWS_CERT_PASSWORD`                                                                                                      |
 
-Without them, builds are unsigned and macOS and Windows warn on first open.
+Without them, Windows builds are unsigned and macOS builds get an ad-hoc signature (applied in the `postPackage` hook, so a downloaded app isn't reported as "damaged"). Both warn on first open.
 
 ## App icon
 

@@ -86,7 +86,7 @@ Get the latest version from the [Releases page](https://github.com/echoabhishek/
 
 > [!NOTE]
 > Until code signing is set up, macOS and Windows warn the first time you open the app.
-> On macOS, right-click the app and choose **Open**. On Windows, choose **More info → Run anyway**.
+> On macOS, open the app once, then go to **System Settings → Privacy & Security** and click **Open Anyway** (on macOS 14 and earlier, right-click the app and choose **Open**). On Windows, choose **More info → Run anyway**.
 
 ## Command line
 
