@@ -33,7 +33,9 @@ export function getCliArgs(): string[] | null {
   const first = args[0];
   if (!first) return null;
   const commands = ['help', '--help', '-h', '--version', '-v', 'list'];
-  return commands.includes(first) || findTool(first) ? args : null;
+  return commands.includes(first) || isKind(first) || findTool(first)
+    ? args
+    : null;
 }
 
 /** Runs the CLI and resolves with the process exit code. */
@@ -42,7 +44,19 @@ export async function runCli(args: string[]): Promise<number> {
   if (command === '--version' || command === '-v')
     return print(app.getVersion());
   if (command === 'list') return print(listText());
-  const tool = findTool(command);
+  // `video convert …`, or the tool id as one word: `video.convert …`.
+  let tool = findTool(command);
+  if (!tool && isKind(command)) {
+    const name = rest.shift();
+    tool = findTool(`${command}.${name}`);
+    if (!tool) {
+      if (!name) return print(listText(command));
+      console.error(
+        `Unknown ${command} tool "${name}".\n\n${listText(command)}`,
+      );
+      return 2;
+    }
+  }
   if (!tool) return print(usageText());
   if (rest.includes('--help') || rest.includes('-h'))
     return print(toolHelpText(tool));
@@ -59,13 +73,17 @@ export async function runCli(args: string[]): Promise<number> {
   return convert(tool, parsed);
 }
 
-function findTool(name: string): ToolDefinition | undefined {
-  return tools.find((t) => t.id === name || cliName(t) === name);
+function findTool(id: string): ToolDefinition | undefined {
+  return tools.find((t) => t.id === id);
 }
 
-/** `video.mov-to-mp4` → `mov-to-mp4`. */
+function isKind(word: string): boolean {
+  return tools.some((t) => t.kind === word);
+}
+
+/** `video.convert` → `video convert`. */
 function cliName(tool: ToolDefinition): string {
-  return tool.id.slice(tool.id.indexOf('.') + 1);
+  return tool.id.replace('.', ' ');
 }
 
 function print(text: string): number {
@@ -84,25 +102,23 @@ function header(): string {
 function usageText(): string {
   return `${header()}
 
-Usage: ${BIN} <tool> <files...> [options]
+Usage: ${BIN} <type> <tool> <files...> [options]
 
 Commands:
-  list              List available tools
-  <tool> --help     Show a tool's options
-  --version         Show version
+  list                  List available tools
+  <type> <tool> --help  Show a tool's options
+  --version             Show version
 
 Run without arguments to open the app.
 
 ${listText()}`;
 }
 
-function listText(): string {
-  const width = Math.max(...tools.map((t) => cliName(t).length)) + 2;
-  return `Tools:\n${tools
-    .map(
-      (t) =>
-        `  ${cliName(t).padEnd(width)}${t.kind}/${t.operation}  ${t.description}`,
-    )
+function listText(kind?: string): string {
+  const shown = tools.filter((t) => !kind || t.kind === kind);
+  const width = Math.max(...shown.map((t) => cliName(t).length)) + 2;
+  return `Tools:\n${shown
+    .map((t) => `  ${cliName(t).padEnd(width)}${t.description}`)
     .join('\n')}`;
 }
 

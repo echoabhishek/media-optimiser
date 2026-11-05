@@ -1,9 +1,9 @@
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import type { JobState } from '../../shared/types';
+import type { JobState, OptionValues } from '../../shared/types';
 import { JobRunner, uniqueOutputPath } from './JobRunner';
 
 // Real ffmpeg from ffmpeg-static (resolved via app.getAppPath() in dev mode).
@@ -63,7 +63,7 @@ function runJob(
   runner: JobRunner,
   inputPath: string,
   onRunning?: (job: JobState) => void,
-  speed = 'fast',
+  options: OptionValues = {},
 ): Promise<JobState> {
   return new Promise((resolve, reject) => {
     runner.on('update', (job) => {
@@ -71,7 +71,13 @@ function runJob(
       if (!['queued', 'running'].includes(job.status)) resolve(job);
     });
     runner
-      .enqueue([{ toolId: 'video.mov-to-mp4', inputPath, options: { speed } }])
+      .enqueue([
+        {
+          toolId: 'video.convert',
+          inputPath,
+          options: { speed: 'fast', ...options },
+        },
+      ])
       .catch(reject);
   });
 }
@@ -108,6 +114,27 @@ describe('JobRunner (real ffmpeg)', () => {
     expect(sawProgress).toBe(true);
   });
 
+  it('converts to WebM (VP9 + Opus) and MOV', async () => {
+    const input = makeClip('formats.mov', 1);
+    const expected = {
+      webm: ['formats.webm', 'Video: vp9', 'Audio: opus'],
+      mov: ['formats (optimised).mov', 'Video: h264', 'Audio: aac'],
+    };
+    for (const [format, [name, video, audio]] of Object.entries(expected)) {
+      const job = await runJob(new JobRunner(), input, undefined, { format });
+      expect(job.status).toBe('done');
+      expect(job.outputPath).toBe(path.join(dir, name));
+      expect(job.quality).toBeGreaterThan(0.9);
+      const info = spawnSync(ffmpegBin, [
+        '-hide_banner',
+        '-i',
+        job.outputPath!,
+      ]);
+      expect(info.stderr.toString()).toContain(video);
+      expect(info.stderr.toString()).toContain(audio);
+    }
+  });
+
   it('cancels mid-encode and leaves no partial file', async () => {
     // Large and slow enough that cancelling lands mid-encode.
     const input = makeClip('long.mov', 20, '1920x1080');
@@ -118,7 +145,7 @@ describe('JobRunner (real ffmpeg)', () => {
       (j) => {
         if ((j.progress ?? 0) > 0) runner.cancel(j.id);
       },
-      'slow',
+      { speed: 'slow' },
     );
     expect(job.status).toBe('cancelled');
     expect(fs.readdirSync(dir).filter((f) => f.startsWith('long.mp4'))).toEqual(
@@ -132,7 +159,7 @@ describe('JobRunner (real ffmpeg)', () => {
     const job = await runJob(new JobRunner(), input);
     expect(job.status).toBe('error');
     expect(job.error).not.toBe('Conversion failed!');
-    expect(job.errorDetails).toContain('Tool: video.mov-to-mp4');
+    expect(job.errorDetails).toContain('Tool: video.convert');
     expect(job.errorDetails).toContain(`Input: ${input}`);
     expect(
       fs.readdirSync(dir).filter((f) => f.startsWith('broken.mp4')),
@@ -163,7 +190,7 @@ describe('JobRunner trash originals (real ffmpeg)', () => {
       });
       void runner.enqueue([
         {
-          toolId: 'video.mov-to-mp4',
+          toolId: 'video.convert',
           inputPath: input,
           options: { speed: 'fast' },
           trashOriginal: true,
@@ -186,7 +213,7 @@ describe('JobRunner trash originals (real ffmpeg)', () => {
       });
       void runner.enqueue([
         {
-          toolId: 'video.mov-to-mp4',
+          toolId: 'video.convert',
           inputPath: input,
           options: {},
           trashOriginal: true,

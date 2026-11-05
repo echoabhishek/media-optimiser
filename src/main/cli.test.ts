@@ -2,8 +2,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import { movToMp4 } from '../tools/video/mov-to-mp4';
-import { parseToolArgs } from './cli';
+import { convertVideo } from '../tools/video/convert';
+import { parseToolArgs, runCli } from './cli';
 
 vi.mock('electron', () => ({
   app: { isPackaged: false, getAppPath: () => process.cwd() },
@@ -20,7 +20,7 @@ beforeAll(() => {
 });
 afterAll(() => fs.rmSync(dir, { recursive: true, force: true }));
 
-const parse = (...args: string[]) => parseToolArgs(movToMp4, args);
+const parse = (...args: string[]) => parseToolArgs(convertVideo, args);
 
 describe('parseToolArgs', () => {
   it('parses files, --key value and --key=value', () => {
@@ -89,5 +89,45 @@ describe('parseToolArgs', () => {
       a === 'MOV' ? mov : a === 'PHOTO' ? path.join(dir, 'photo.png') : a,
     );
     expect(() => parse(...resolved)).toThrow(message);
+  });
+});
+
+describe('runCli commands', () => {
+  /** Runs the CLI and returns its exit code and everything it printed. */
+  async function cli(...args: string[]) {
+    const out: string[] = [];
+    const log = vi.spyOn(console, 'log').mockImplementation((t) => out.push(t));
+    const err = vi
+      .spyOn(console, 'error')
+      .mockImplementation((t) => out.push(t));
+    try {
+      return { code: await runCli(args), out: out.join('\n') };
+    } finally {
+      log.mockRestore();
+      err.mockRestore();
+    }
+  }
+
+  it('lists the tools of a media type', async () => {
+    const { code, out } = await cli('video');
+    expect(code).toBe(0);
+    expect(out).toContain('video convert');
+    expect(out).toContain('video gif');
+    expect(out).not.toContain('audio convert');
+  });
+
+  it('shows help for a type and tool, or the tool id', async () => {
+    for (const args of [['video', 'convert'], ['video.convert']]) {
+      const { code, out } = await cli(...args, '--help');
+      expect(code).toBe(0);
+      expect(out).toContain('Usage: media-optimiser video convert');
+      expect(out).toContain('--format <mp4|webm|mov>');
+    }
+  });
+
+  it('rejects an unknown tool with exit code 2', async () => {
+    const { code, out } = await cli('video', 'mov-to-mp4');
+    expect(code).toBe(2);
+    expect(out).toContain('Unknown video tool "mov-to-mp4"');
   });
 });

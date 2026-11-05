@@ -157,7 +157,8 @@ export function App() {
     outputDir === null &&
     !trashOriginals &&
     tool.options.every((f) => options[f.key] === f.default);
-  const basicFields = tool.options.filter((f) => !f.advanced);
+  const leadingFields = tool.options.filter((f) => f.leading && !f.advanced);
+  const basicFields = tool.options.filter((f) => !f.leading && !f.advanced);
   const advancedFields = tool.options.filter((f) => f.advanced);
   const advancedChanged = advancedFields.filter(
     (f) => options[f.key] !== f.default,
@@ -244,6 +245,13 @@ export function App() {
             <h1>{tool.name}</h1>
             <p>{tool.description}</p>
           </header>
+          {leadingFields.length > 0 && (
+            <OptionsForm
+              fields={leadingFields}
+              values={options}
+              onChange={setOption}
+            />
+          )}
           {tool.presets && (
             <Presets
               presets={tool.presets}

@@ -9,27 +9,63 @@ import type { ToolDefinition } from '../types';
 
 type Codec = 'h264' | 'h265';
 type Quality = 'high' | 'balanced' | 'small';
+type Format = 'mp4' | 'webm' | 'mov';
 
 /**
  * CRF per codec. Lower = better quality / bigger file. x265 needs a CRF
  * roughly 3 higher than x264 for similar visual quality.
  */
-const CRF: Record<Codec, Record<Quality, number>> = {
+const CRF: Record<Codec | 'vp9', Record<Quality, number>> = {
   h264: { high: 19, balanced: 23, small: 28 },
   h265: { high: 22, balanced: 26, small: 31 },
+  vp9: { high: 24, balanced: 31, small: 37 },
 };
 
-export const movToMp4: ToolDefinition = {
-  id: 'video.mov-to-mp4',
-  name: 'MOV to MP4',
+/** libvpx -cpu-used per speed: higher is faster and slightly larger. */
+const VP9_CPU_USED = { fast: '5', medium: '3', slow: '2' };
+
+/** Audio kbps: AAC in MP4/MOV, Opus (more efficient) in WebM. */
+const AUDIO_KBPS = {
+  aac: { standard: 160, high: 256 },
+  opus: { standard: 128, high: 192 },
+};
+
+export const convertVideo: ToolDefinition = {
+  id: 'video.convert',
+  name: 'Convert video',
   description:
-    'Convert QuickTime / screen recordings to a small MP4 that plays everywhere, keeping video and audio quality.',
+    'Convert videos to MP4, WebM or MOV and make them much smaller, keeping video and audio quality.',
   kind: 'video',
   operation: 'convert',
-  inputExtensions: ['mov', 'm4v', 'mkv', 'webm', 'avi', 'mp4'],
+  inputExtensions: ['mov', 'mp4', 'm4v', 'mkv', 'webm', 'avi'],
   outputExtension: 'mp4',
+  outputExtensionFor: (_input, options) => String(options.format),
   supportsTrim: true,
   options: [
+    {
+      type: 'select',
+      key: 'format',
+      leading: true,
+      label: 'Format',
+      default: 'mp4',
+      choices: [
+        {
+          value: 'mp4',
+          label: 'MP4',
+          help: 'Plays everywhere: Slack, GitHub, browsers, phones.',
+        },
+        {
+          value: 'webm',
+          label: 'WebM',
+          help: 'Open format for websites. Smaller, slower to create.',
+        },
+        {
+          value: 'mov',
+          label: 'MOV',
+          help: 'QuickTime, for editing in Final Cut Pro or iMovie.',
+        },
+      ],
+    },
     {
       type: 'select',
       key: 'quality',
@@ -89,6 +125,7 @@ export const movToMp4: ToolDefinition = {
       advanced: true,
       label: 'Codec',
       default: 'h264',
+      help: 'For MP4 and MOV. WebM always uses VP9.',
       choices: [
         {
           value: 'h264',
@@ -146,16 +183,16 @@ export const movToMp4: ToolDefinition = {
       key: 'audio',
       advanced: true,
       label: 'Audio',
-      default: 'aac160',
+      default: 'standard',
       choices: [
         {
-          value: 'aac160',
-          label: 'AAC 160 kbps',
+          value: 'standard',
+          label: 'Standard',
           help: 'Transparent for speech and most music.',
         },
         {
-          value: 'aac256',
-          label: 'AAC 256 kbps',
+          value: 'high',
+          label: 'High',
           help: 'For music where every detail matters.',
         },
         { value: 'none', label: 'Remove audio' },
@@ -188,7 +225,7 @@ export const movToMp4: ToolDefinition = {
     {
       id: 'standard',
       label: 'Standard',
-      help: 'Same resolution, much smaller file. Plays everywhere.',
+      help: 'Same resolution, much smaller file.',
       values: {
         quality: 'balanced',
         resolution: 'original',
@@ -198,7 +235,7 @@ export const movToMp4: ToolDefinition = {
     {
       id: 'chat',
       label: 'Chat',
-      help: 'Slack, Teams: 1080p, plays everywhere.',
+      help: 'Slack, Teams: 1080p.',
       values: {
         quality: 'balanced',
         resolution: '1080',
@@ -342,7 +379,8 @@ type RateControl =
   | { mode: 'bitrate'; videoKbps: number; pass: 1 | 2; passlog: string };
 
 function audioBitrate(options: OptionValues): number {
-  return options.audio === 'aac256' ? 256 : 160;
+  const quality = options.audio === 'high' ? 'high' : 'standard';
+  return AUDIO_KBPS[options.format === 'webm' ? 'opus' : 'aac'][quality];
 }
 
 /** Builds the ffmpeg arguments for one encode (CRF, or one pass of two-pass). */
@@ -354,7 +392,8 @@ export function encodeArgs(
   rate: RateControl,
   trim?: TrimRange,
 ): string[] {
-  const codec = options.codec as Codec;
+  const format = options.format as Format;
+  const codec = format === 'webm' ? 'vp9' : (options.codec as Codec);
   const isFirstPass = rate.mode === 'bitrate' && rate.pass === 1;
   const t = trimArgs(trim);
   const args: string[] = [...t.input, '-i', inputPath, ...t.output];
@@ -370,31 +409,45 @@ export function encodeArgs(
   }
   if (options.fps !== 'original') args.push('-fpsmax', String(options.fps));
 
-  args.push(
-    '-c:v',
-    codec === 'h265' ? 'libx265' : 'libx264',
-    '-preset',
-    String(options.speed),
-  );
-  if (rate.mode === 'crf') {
-    args.push('-crf', String(CRF[codec][options.quality as Quality]));
+  const crf = String(CRF[codec][options.quality as Quality]);
+  if (codec === 'vp9') {
+    args.push(
+      '-c:v',
+      'libvpx-vp9',
+      '-deadline',
+      'good',
+      '-cpu-used',
+      VP9_CPU_USED[options.speed as keyof typeof VP9_CPU_USED],
+      '-row-mt',
+      '1',
+    );
+    // Constant quality in VP9 needs -b:v 0 alongside -crf.
+    if (rate.mode === 'crf') args.push('-crf', crf, '-b:v', '0');
+    else args.push('-b:v', `${rate.videoKbps}k`);
+    if (options.content === 'screen') args.push('-tune-content', 'screen');
   } else {
-    args.push('-b:v', `${rate.videoKbps}k`);
+    args.push(
+      '-c:v',
+      codec === 'h265' ? 'libx265' : 'libx264',
+      '-preset',
+      String(options.speed),
+    );
+    if (rate.mode === 'crf') args.push('-crf', crf);
+    else args.push('-b:v', `${rate.videoKbps}k`);
   }
   args.push('-pix_fmt', 'yuv420p');
 
-  const x265: string[] = ['log-level=error'];
-  if (codec === 'h264') {
+  if (codec === 'h264')
     args.push('-tune', options.content === 'screen' ? 'stillimage' : 'film');
-    if (rate.mode === 'bitrate')
-      args.push('-pass', String(rate.pass), '-passlogfile', rate.passlog);
-  } else {
+  if (codec === 'h265') {
     // hvc1 tag is what QuickTime / Safari / iOS require to play HEVC in MP4.
-    args.push('-tag:v', 'hvc1');
+    const x265 = ['log-level=error'];
     if (rate.mode === 'bitrate')
       x265.push(`pass=${rate.pass}`, `stats=${rate.passlog}.log`);
+    args.push('-tag:v', 'hvc1', '-x265-params', x265.join(':'));
+  } else if (rate.mode === 'bitrate') {
+    args.push('-pass', String(rate.pass), '-passlogfile', rate.passlog);
   }
-  if (codec === 'h265') args.push('-x265-params', x265.join(':'));
 
   // The first pass only analyses video; its output is discarded.
   if (isFirstPass) {
@@ -415,7 +468,7 @@ export function encodeArgs(
       '-map',
       '0:a?',
       '-c:a',
-      'aac',
+      format === 'webm' ? 'libopus' : 'aac',
       '-b:a',
       `${audioBitrate(options)}k`,
     );
@@ -431,6 +484,7 @@ export function encodeArgs(
       args.push('-metadata', `creation_time=${info.creationTime}`);
   }
   // Index first so web players can start before the whole file downloads.
-  args.push('-movflags', '+faststart', outputPath);
+  if (format !== 'webm') args.push('-movflags', '+faststart');
+  args.push(outputPath);
   return args;
 }

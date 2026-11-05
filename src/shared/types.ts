@@ -21,6 +21,8 @@ interface BaseField {
   help?: string;
   /** Hidden under "Advanced settings" so the default view stays simple. */
   advanced?: boolean;
+  /** Shown above the presets: the first choice a user makes (e.g. format). */
+  leading?: boolean;
 }
 
 export interface SelectField extends BaseField {

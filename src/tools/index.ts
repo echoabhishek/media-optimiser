@@ -4,7 +4,7 @@ import { cleanupAudio } from './audio/cleanup';
 import { convertAudio } from './audio/convert';
 import { normaliseLoudness } from './audio/normalise';
 import { compressImages } from './image/compress';
-import { movToMp4 } from './video/mov-to-mp4';
+import { convertVideo } from './video/convert';
 import { toGif } from './video/to-gif';
 
 /**
@@ -15,7 +15,7 @@ import { toGif } from './video/to-gif';
  * pick it up automatically.
  */
 export const tools: ToolDefinition[] = [
-  movToMp4,
+  convertVideo,
   toGif,
   convertAudio,
   normaliseLoudness,

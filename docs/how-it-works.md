@@ -19,19 +19,23 @@ This is [SSIM](https://en.wikipedia.org/wiki/Structural_similarity) on brightnes
 
 As a rough guide, 99% and above looks identical at normal viewing size, and 97–99% is close but may show softening on fine detail.
 
-## Video: MOV to MP4
+## Video: convert
+
+Accepts MOV, MP4, M4V, MKV, WebM and AVI.
 
 | Setting         | What it does                                                                                                                                                                          |
 | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Format          | _MP4_ (default) and _MOV_ use H.264 or H.265 with AAC audio. _WebM_ uses VP9 with Opus audio.                                                                                         |
 | H.264 (default) | libx264 at CRF 19 / 23 / 28 for High / Balanced / Smallest. Plays everywhere.                                                                                                         |
 | H.265 / HEVC    | libx265 at CRF 22 / 26 / 31, tagged `hvc1` so QuickTime and Safari play it. Often smaller on long or busy video, but about 8× slower to encode.                                       |
-| Content         | _Screen recording_ uses `-tune stillimage` (sharp text, still frames); _Camera footage_ uses `-tune film`.                                                                            |
+| VP9 (WebM)      | libvpx-vp9 at CRF 24 / 31 / 37 in constant-quality mode, with row multithreading. Opus audio at 128 or 192 kbps.                                                                      |
+| Content         | _Screen recording_ uses `-tune stillimage` (x264) or `-tune-content screen` (VP9) for sharp text and still frames; _Camera footage_ uses `-tune film`.                                |
 | Max resolution  | Downscales only when the video is larger (Lanczos), keeping the aspect ratio.                                                                                                         |
 | Size limit      | Encodes normally first. Only if the result is too big does it run a two-pass encode at the bitrate that fits (with 4% headroom). Fails clearly if that would be under about 100 kbps. |
 | Max frame rate  | `-fpsmax`: caps the frame rate, never raises it.                                                                                                                                      |
 | Metadata        | Location and device information are removed by default; the creation date is kept. An advanced toggle keeps everything.                                                               |
 | Trim            | Start and end are applied without re-reading the skipped part, so trimming a long file is fast.                                                                                       |
-| Always          | `yuv420p` for compatibility, `+faststart` so web players start before the download finishes, and only the first video track (QuickTime timecode tracks are dropped).                  |
+| Always          | `yuv420p` for compatibility, `+faststart` (MP4 and MOV) so web players start before the download finishes, and only the first video track (QuickTime timecode tracks are dropped).    |
 
 **Presets** set several of these at once: _Standard_ (same resolution, much smaller), _Chat_ (1080p), _GitHub_ (under 10 MB), _Email_ (under 25 MB) and _Best quality_ (visually lossless).
 

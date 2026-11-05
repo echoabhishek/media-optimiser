@@ -37,7 +37,7 @@ Media Optimiser makes them small enough to share in Slack, email or a pull reque
 
 ### Video
 
-- **MOV to MP4:** H.264 (plays everywhere) or H.265 (smaller), tuned for screen recordings or camera footage.
+- **Convert** MOV, MP4, MKV, WebM or AVI to **MP4, WebM or MOV**: H.264 (plays everywhere), H.265 or VP9, tuned for screen recordings or camera footage.
 - **Presets:** Standard, Chat, GitHub (under 10 MB), Email (under 25 MB) and Best quality.
 - **Size limit:** set a maximum size, and the app re-encodes harder only when it has to.
 - **Trim** each file with a preview player before converting.
@@ -90,10 +90,10 @@ Get the latest version from the [Releases page](https://github.com/echoabhishek/
 
 ## Command line
 
-The app doubles as a command-line tool. Each tool is a command, and its flags come from the same settings you see in the app.
+The app doubles as a command-line tool. Each tool is a command (`video convert`, `audio normalise`, `image compress`…), and its flags come from the same settings you see in the app.
 
 ```console
-$ media-optimiser mov-to-mp4 "Team standup.mov" "Product demo.mov" --preset chat --out ~/Desktop
+$ media-optimiser video convert "Team standup.mov" "Product demo.mov" --preset chat --out ~/Desktop
 ✓ [1/2] Team standup.mov  89.3 MB → 40.5 MB (54% smaller, 99.2% match)
 ✓ [2/2] Product demo.mov  103 MB → 60.6 MB (40% smaller, 99.2% match)
 ```

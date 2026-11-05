@@ -35,7 +35,7 @@ src/
   tools/               ← where features live
     types.ts           ToolDefinition = manifest + run(ctx)
     index.ts           Tool registry
-    video/             mov-to-mp4, to-gif
+    video/             convert, to-gif
     audio/             convert, normalise, cleanup
     image/             compress
   main/                Electron main process (Node)

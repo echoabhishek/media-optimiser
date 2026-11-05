@@ -2,7 +2,7 @@ import { trimArgs, trimmedDuration } from '../trim';
 import type { ToolDefinition } from '../types';
 
 export const toGif: ToolDefinition = {
-  id: 'video.to-gif',
+  id: 'video.gif',
   name: 'Video to GIF',
   description:
     'Turn a short clip into a GIF for pull requests, docs and chats, with an optimised colour palette.',

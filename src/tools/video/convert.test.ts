@@ -6,7 +6,7 @@ import type { MediaInfo } from '../../main/engines/ffmpeg';
 import type { Engines } from '../../main/engines';
 import { resolveOptions } from '../../shared/options';
 import type { OptionValues } from '../../shared/types';
-import { movToMp4 } from './mov-to-mp4';
+import { convertVideo } from './convert';
 
 /** Runs the tool against a fake ffmpeg and returns the arguments it built. */
 async function argsFor(
@@ -28,10 +28,10 @@ async function argsFor(
       captured = args;
     },
   };
-  await movToMp4.run({
+  await convertVideo.run({
     inputPath: 'in.mov',
     outputPath: 'out.mp4',
-    options: resolveOptions(movToMp4.options, options),
+    options: resolveOptions(convertVideo.options, options),
     engines: { ffmpeg } as unknown as Engines,
     signal: new AbortController().signal,
     onProgress: () => {},
@@ -42,7 +42,7 @@ async function argsFor(
 /** Value following a flag, e.g. valueOf(args, '-crf') → '23'. */
 const valueOf = (args: string[], flag: string) => args[args.indexOf(flag) + 1];
 
-describe('mov-to-mp4', () => {
+describe('convert video', () => {
   it('defaults to H.264 balanced, tuned for screen recordings', async () => {
     const args = await argsFor({});
     expect(valueOf(args, '-c:v')).toBe('libx264');
@@ -79,7 +79,7 @@ describe('mov-to-mp4', () => {
   });
 
   it('keeps audio as AAC, or drops it when absent or removed', async () => {
-    const withAudio = await argsFor({ audio: 'aac256' });
+    const withAudio = await argsFor({ audio: 'high' });
     expect(valueOf(withAudio, '-c:a')).toBe('aac');
     expect(valueOf(withAudio, '-b:a')).toBe('256k');
     expect(await argsFor({}, { hasAudio: false })).toContain('-an');
@@ -110,10 +110,10 @@ describe('mov-to-mp4', () => {
 
   it('reports visual similarity, except when the frame rate changes', async () => {
     const run = (options: OptionValues) =>
-      movToMp4.run({
+      convertVideo.run({
         inputPath: 'in.mov',
         outputPath: 'out.mp4',
-        options: resolveOptions(movToMp4.options, options),
+        options: resolveOptions(convertVideo.options, options),
         engines: {
           ffmpeg: {
             probe: async () => ({
@@ -132,16 +132,39 @@ describe('mov-to-mp4', () => {
     expect(await run({ fps: '30' })).toEqual({ quality: undefined });
   });
 
+  it('encodes WebM as VP9 constant quality with Opus audio', async () => {
+    const args = await argsFor({ format: 'webm' });
+    expect(valueOf(args, '-c:v')).toBe('libvpx-vp9');
+    expect(valueOf(args, '-crf')).toBe('31');
+    expect(valueOf(args, '-b:v')).toBe('0');
+    expect(valueOf(args, '-tune-content')).toBe('screen');
+    expect(valueOf(args, '-c:a')).toBe('libopus');
+    expect(valueOf(args, '-b:a')).toBe('128k');
+    expect(args).not.toContain('-movflags');
+    expect(args).not.toContain('-tune');
+  });
+
+  it('names the output after the chosen format', () => {
+    const ext = (format: string) =>
+      convertVideo.outputExtensionFor!('in.mp4', { format });
+    expect(['mp4', 'webm', 'mov'].map(ext)).toEqual(['mp4', 'webm', 'mov']);
+  });
+
+  it('leaves the format to the user: presets never change it', () => {
+    for (const preset of convertVideo.presets ?? [])
+      expect(preset.values).not.toHaveProperty('format');
+  });
+
   it('every preset only uses valid option values', () => {
-    for (const preset of movToMp4.presets ?? []) {
-      expect(resolveOptions(movToMp4.options, preset.values)).toMatchObject(
+    for (const preset of convertVideo.presets ?? []) {
+      expect(resolveOptions(convertVideo.options, preset.values)).toMatchObject(
         preset.values,
       );
     }
   });
 });
 
-describe('mov-to-mp4 size limit', () => {
+describe('convert video size limit', () => {
   /** Runs with a fake ffmpeg whose output is `outputBytes` big; returns every call. */
   async function encodes(
     outputBytes: number,
@@ -167,10 +190,10 @@ describe('mov-to-mp4 size limit', () => {
           fs.writeFileSync(out, Buffer.alloc(outputBytes));
       },
     };
-    await movToMp4.run({
+    await convertVideo.run({
       inputPath: 'in.mov',
       outputPath: out,
-      options: resolveOptions(movToMp4.options, options),
+      options: resolveOptions(convertVideo.options, options),
       engines: { ffmpeg } as unknown as Engines,
       signal: new AbortController().signal,
       onProgress: () => {},
@@ -201,6 +224,17 @@ describe('mov-to-mp4 size limit', () => {
       codec: 'h265',
     });
     expect(valueOf(pass1, '-x265-params')).toMatch(/pass=1:stats=.+\.log/);
+  });
+
+  it('uses VP9 two-pass and Opus bitrate for WebM', async () => {
+    const [, pass1, pass2] = await encodes(30_000_000, {
+      sizeLimit: '10',
+      format: 'webm',
+    });
+    expect(valueOf(pass1, '-pass')).toBe('1');
+    expect(valueOf(pass2, '-c:v')).toBe('libvpx-vp9');
+    // 1280 kbps total minus 128 kbps Opus.
+    expect(valueOf(pass2, '-b:v')).toBe('1152k');
   });
 
   it('refuses limits that would ruin quality', async () => {
