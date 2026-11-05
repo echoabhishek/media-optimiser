@@ -6,6 +6,9 @@
   "description": "Convert and optimise video, audio and images on Mac, Windows and Linux.",
   "keywords": [],
   "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
   "author": {
     "name": "Abhishek Arora",
     "email": "hey@abhishek.id"
