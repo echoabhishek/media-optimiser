@@ -10,6 +10,8 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 
+// Local signing credentials live in .env (gitignored, never packaged); CI uses repository secrets.
+if (fs.existsSync('.env')) process.loadEnvFile();
 const env = process.env;
 
 // Code signing switches on only when credentials are present (see docs/development.md).

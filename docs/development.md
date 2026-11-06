@@ -104,7 +104,7 @@ sharp is a native module, so Vite doesn't bundle it. The `packageAfterCopy` hook
 
 ### Code signing
 
-Signing turns on automatically when these are set (as repository secrets in CI):
+Signing turns on automatically when these are set: as repository secrets in CI, or locally in a `.env` file (copy `.env.example`; it's gitignored and never packaged into the app):
 
 | Platform                       | Secrets                                                                                                                                                         |
 | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
