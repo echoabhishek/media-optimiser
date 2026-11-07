@@ -106,10 +106,10 @@ sharp is a native module, so Vite doesn't bundle it. The `packageAfterCopy` hook
 
 Signing turns on automatically when these are set: as repository secrets in CI, or locally in a `.env` file (copy `.env.example`; it's gitignored and never packaged into the app):
 
-| Platform                       | Secrets                                                                                                                                                         |
-| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| macOS signing and notarisation | `APPLE_ID`, `APPLE_APP_PASSWORD` (an app-specific password), `APPLE_TEAM_ID`. A "Developer ID Application" certificate must be in the build machine's keychain. |
-| Windows                        | `WINDOWS_CERT_FILE` (a `.pfx`) and `WINDOWS_CERT_PASSWORD`                                                                                                      |
+| Platform                       | Secrets                                                                                                                                                                                                                  |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| macOS signing and notarisation | `APPLE_ID`, `APPLE_APP_PASSWORD` (an app-specific password), `APPLE_TEAM_ID`. A "Developer ID Application" certificate in the keychain; in CI, `MACOS_CERT_P12` (the exported `.p12`, base64) and `MACOS_CERT_PASSWORD`. |
+| Windows                        | `WINDOWS_CERT_FILE` (a `.pfx`) and `WINDOWS_CERT_PASSWORD`                                                                                                                                                               |
 
 Without them, Windows builds are unsigned and macOS builds get an ad-hoc signature (applied in the `postPackage` hook, so a downloaded app isn't reported as "damaged"). Both warn on first open.
 
