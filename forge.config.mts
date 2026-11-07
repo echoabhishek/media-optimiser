@@ -17,7 +17,8 @@ const env = process.env;
 // Code signing switches on only when credentials are present (see docs/development.md).
 const macSigning = env.APPLE_ID
   ? {
-      osxSign: {},
+      // Fail the build instead of shipping an unsigned app with only a hidden warning.
+      osxSign: { continueOnError: false },
       osxNotarize: {
         appleId: env.APPLE_ID,
         appleIdPassword: env.APPLE_APP_PASSWORD!,
